@@ -1,0 +1,8 @@
+#!/bin/sh
+
+export SCALE=1.8
+export KEY_COLOR=9889FA
+export VALUE_COLOR=FFFFFF
+export FPS_ONLY=0
+
+exec env LD_PRELOAD="/usr/lib/libsimpleoverlay.so" "$@"
