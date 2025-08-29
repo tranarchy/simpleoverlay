@@ -859,9 +859,7 @@ static const GLchar* _gltText2DFragmentShaderSource =
 "\n"
 "void main()\n"
 "{\n"
-"	fragColor = texture(diffuse, fTexCoord);\n"
-"	if(fragColor.a<0.5 || length(fragColor.rgb) < 0.5){discard;}\n"
-"   	fragColor *= color;"
+"	fragColor = texture(diffuse, fTexCoord) * color;\n"
 "}\n";
 
 GLT_API GLboolean _gltCreateText2DShader(void)

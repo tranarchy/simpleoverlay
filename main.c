@@ -66,6 +66,15 @@ static drmVersionPtr drm_version = NULL;
   static PFNDLSYM dlsym_ptr = NULL;
 #endif
 
+static PFNGLXSWAPBUFFERS glXSwapBuffers_ptr = NULL;
+static PFNGLXGETPROCADDRESS glXGetProcAddress_ptr = NULL;
+static PFNGLXGETPROCADDRESSARB glXGetProcAddressARB_ptr = NULL;
+static PFNEGLSWAPBUFFERS eglSwapBuffers_ptr = NULL;
+static PFNEGLGETPROCADDRESS eglGetProcAddress_ptr = NULL;
+
+static GLTtext *key_text = NULL;
+static GLTtext *value_text = NULL;
+
 static GLXContext glx_ctx = NULL;
 static EGLContext egl_ctx = NULL;
 
@@ -171,6 +180,9 @@ static void add_text(char (*texts)[256], s_texts_info *texts_info, const char *f
     va_list args;
     char buffer[256];
 
+    GLfloat key_width;
+    GLfloat value_width;
+    
     int text_cunt = texts_info->text_count;
 
     va_start(args, fmt);
@@ -179,43 +191,34 @@ static void add_text(char (*texts)[256], s_texts_info *texts_info, const char *f
 
     strlcpy(texts[text_cunt], buffer, sizeof(texts[text_cunt]));
 
-    GLTtext *text_key = gltCreateText();
-    gltSetText(text_key, strtok(buffer, "|"));
+    gltSetText(key_text, strtok(buffer, "|"));
+    gltSetText(value_text, strtok(NULL, "|"));
 
-    GLTtext *text_value = gltCreateText();
-    gltSetText(text_value, strtok(NULL, "|"));
+    key_width = gltGetTextWidth(key_text, config.scale);
+    value_width = gltGetTextWidth(value_text, config.scale);
 
-    GLfloat key_width = gltGetTextWidth(text_key, config.scale);
-    GLfloat value_width = gltGetTextWidth(text_value, config.scale);
-
-    texts_info->full_text_height += gltGetTextHeight(text_key, config.scale);
-
-    gltDestroyText(text_key);
-    gltDestroyText(text_value);
-
-    if (value_width > texts_info->max_value_width) {
-        texts_info->max_value_width = value_width;
-    }
+    texts_info->full_text_height += gltGetTextHeight(key_text, config.scale);
 
     if (key_width > texts_info->max_key_width) {
         texts_info->max_key_width = key_width;
+    }
+
+    if (value_width > texts_info->max_value_width) {
+        texts_info->max_value_width = value_width;
     }
 
     texts_info->text_count++;
 }
 
 static void draw_texts(char (*texts)[256], s_texts_info texts_info) {
-    GLTtext *key_text;
-    GLTtext *value_text;
-
     gltBeginDraw();
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
  
     for (int i = 0; i < texts_info.text_count; i++) {
       char *key = strtok(texts[i], "|");
       char *value = strtok(NULL, "|");
-
-      key_text = gltCreateText();
-      value_text = gltCreateText();
 
       gltSetText(key_text, key);
       gltSetText(value_text, value);
@@ -226,27 +229,10 @@ static void draw_texts(char (*texts)[256], s_texts_info texts_info) {
       gltColor(config.value_color[0], config.value_color[1], config.value_color[2], 1.0f);
       gltDrawText2D(value_text, texts_info.max_key_width + (texts_info.max_key_width / 2.0f), text_pos_y, config.scale);
 
-      gltDestroyText(key_text);
-      gltDestroyText(value_text);
-
       text_pos_y += gltGetLineHeight(config.scale);
     }
 
     gltEndDraw();
-    gltTerminate();
-}
-
-static void draw_bg(int width, int height, s_texts_info texts_info) {
-    GLfloat bg_height = texts_info.full_text_height;
-    GLfloat bg_width = texts_info.max_key_width + (texts_info.max_key_width / 2.0f) + texts_info.max_value_width;
-
-    glColor4f(0.06274f, 0.06274f, 0.10196f, 0.78431f);
-    glBegin(GL_QUADS);
-      glVertex2f(5, height - 10);
-      glVertex2f(5 + bg_width, height - 10);
-      glVertex2f(5 + bg_width, height - bg_height - 10);
-      glVertex2f(5, height - bg_height - 10);
-    glEnd();
 }
 
 static void draw_overlay(GLint *viewport) {
@@ -258,6 +244,13 @@ static void draw_overlay(GLint *viewport) {
     width = viewport[2];
     height = viewport[3];
 
+    if (!gltInitialized) {
+       gltInit();
+       
+       key_text = gltCreateText();
+       value_text = gltCreateText();
+    }
+
     if (old_viewport[0] != width || old_viewport[1] != height) {
       glViewport(viewport[0], viewport[1], width, height);
       gltViewport(width, height);
@@ -265,13 +258,6 @@ static void draw_overlay(GLint *viewport) {
 
     old_viewport[0] = width;
     old_viewport[1] = height;
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(0, width, 0, height, -1, 1);
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     populate_overlay_info();
     
@@ -282,17 +268,18 @@ static void draw_overlay(GLint *viewport) {
       add_text(texts, &texts_info, "GPU |%d%% (%d C)", overlay_info.gpu_usage, overlay_info.gpu_temp);
       add_text(texts, &texts_info, "VRAM |%.2f GiB", overlay_info.gpu_mem);
       add_text(texts, &texts_info, "RAM |%.2f GiB", overlay_info.mem);
-    }
+    }   
     
-    gltInit();
-    draw_bg(width, height, texts_info);
     draw_texts(texts, texts_info);
 
     text_pos_y = 10;
 }
 
 EGLBoolean eglSwapBuffers(EGLDisplay display, EGLSurface surf) {
-    PFNEGLSWAPBUFFERS eglSwapBuffers_ptr = (PFNEGLSWAPBUFFERS)dlsym_ptr(RTLD_NEXT, "eglSwapBuffers");
+    if (!eglSwapBuffers_ptr) {
+      eglSwapBuffers_ptr = (PFNEGLSWAPBUFFERS)dlsym_ptr(RTLD_NEXT, "eglSwapBuffers");
+    }
+    
     EGLContext old_ctx = eglGetCurrentContext();
 
     GLint viewport[4];
@@ -311,13 +298,19 @@ void (*eglGetProcAddress(char const *procname))(void) {
     if (strcmp(procname, "eglSwapBuffers") == 0) {
         return (void*)eglSwapBuffers;
     }
-    
-    PFNEGLGETPROCADDRESS eglGetProcAddress_ptr = (PFNEGLGETPROCADDRESS)dlsym_ptr(RTLD_NEXT, "eglGetProcAddress");        
+
+    if (!eglGetProcAddress_ptr) {
+       eglGetProcAddress_ptr = (PFNEGLGETPROCADDRESS)dlsym_ptr(RTLD_NEXT, "eglGetProcAddress"); 
+    }
+          
     return eglGetProcAddress_ptr(procname);
 }
 
 void glXSwapBuffers(Display *dpy, GLXDrawable drawable) {
-    PFNGLXSWAPBUFFERS glXSwapBuffers_ptr = (PFNGLXSWAPBUFFERS)dlsym_ptr(RTLD_NEXT, "glXSwapBuffers");
+    if (!glXSwapBuffers_ptr) {
+      glXSwapBuffers_ptr = (PFNGLXSWAPBUFFERS)dlsym_ptr(RTLD_NEXT, "glXSwapBuffers");
+    }
+
     GLXContext old_ctx = glXGetCurrentContext();
 
     GLint viewport[4];
@@ -335,8 +328,11 @@ void (*glXGetProcAddress(const GLubyte *procName))(void) {
     if (strcmp((const char *)procName, "glXSwapBuffers") == 0) {
         return (void*)glXSwapBuffers;
     }
+
+    if (!glXGetProcAddress_ptr) {
+      glXGetProcAddress_ptr = (PFNGLXGETPROCADDRESS)dlsym_ptr(RTLD_NEXT, "glXGetProcAddress");
+    }
     
-    PFNGLXGETPROCADDRESS glXGetProcAddress_ptr = (PFNGLXGETPROCADDRESS)dlsym_ptr(RTLD_NEXT, "glXGetProcAddress");        
     return glXGetProcAddress_ptr(procName);
 }
 
@@ -344,8 +340,11 @@ void (*glXGetProcAddressARB(const GLubyte *procName))(void) {
     if (strcmp((const char *)procName, "glXSwapBuffers") == 0) {
         return (void*)glXSwapBuffers;
     }
+
+    if (!glXGetProcAddressARB_ptr) {
+      glXGetProcAddressARB_ptr = (PFNGLXGETPROCADDRESSARB)dlsym_ptr(RTLD_NEXT, "glXGetProcAddressARB");
+    }
     
-    PFNGLXGETPROCADDRESSARB glXGetProcAddressARB_ptr = (PFNGLXGETPROCADDRESSARB)dlsym_ptr(RTLD_NEXT, "glXGetProcAddressARB");
     return glXGetProcAddressARB_ptr(procName);
 }
 
@@ -366,7 +365,7 @@ void* dlsym(void *handle, const char *symbol) {
         return (void*)eglGetProcAddress;
     } else if (strcmp(symbol, "eglSwapBuffers") == 0) {
         return (void*)eglSwapBuffers;
-    } 
+    }
 
     return dlsym_ptr(handle, symbol);
 }
