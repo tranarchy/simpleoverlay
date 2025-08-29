@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#include "include/overlay.h"
+#include "../include/overlay.h"
 
 #if defined(__linux__)
     #define CPU_IDLE_STATE 3

@@ -7,7 +7,7 @@
 #include <libdrm/amdgpu.h>
 #include <libdrm/amdgpu_drm.h>
 
-#include "include/overlay.h"
+#include "../include/overlay.h"
 
 static amdgpu_device_handle device = NULL;
 

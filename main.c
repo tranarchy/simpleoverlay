@@ -283,9 +283,8 @@ static void draw_overlay(GLint *viewport) {
       add_text(texts, &texts_info, "VRAM |%.2f GiB", overlay_info.gpu_mem);
       add_text(texts, &texts_info, "RAM |%.2f GiB", overlay_info.mem);
     }
-
     
-     gltInit();
+    gltInit();
     draw_bg(width, height, texts_info);
     draw_texts(texts, texts_info);
 
