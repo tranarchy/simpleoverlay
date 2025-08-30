@@ -184,12 +184,14 @@ static void populate_overlay_info(void) {
       overlay_info.fps = frames;
       overlay_info.frametime = (cur_time - prev_time_frametime) / 1e6f;
 
-      populate_cpu(&overlay_info);
-      populate_mem(&overlay_info);
+      if (!config.fps_only) {
+        populate_cpu(&overlay_info);
+        populate_mem(&overlay_info);
 
-      if (drm_version != NULL) {
-        if (strcmp(drm_version->name, "amdgpu") == 0) {
-          populate_amdgpu(&overlay_info);
+        if (drm_version != NULL) {
+          if (strcmp(drm_version->name, "amdgpu") == 0) {
+            populate_amdgpu(&overlay_info);
+          }
         }
       }
 
