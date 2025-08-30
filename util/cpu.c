@@ -25,20 +25,20 @@
 static long long cpu_usage[CPU_STATES_NUM];
 static long long cpu_usage_prev[CPU_STATES_NUM] = { 0 };
 
-static void get_cpu_usage_percent(s_overlay_info *overlay_info, long long *cpu_usage, long long *cpu_usage_prev, int cpu_states_num, int cpu_idle_state) {
+static void get_cpu_usage_percent(s_overlay_info *overlay_info, long long *cpu_usage, long long *cpu_usage_prev) {
     long long cpu_usage_sum = 0;
     long long cpu_non_idle_usage_sum = 0;
     
-    for (int i = 0; i < cpu_states_num; i++) {
+    for (int i = 0; i < CPU_STATES_NUM; i++) {
         cpu_usage_sum += cpu_usage[i] - cpu_usage_prev[i];
     }
 
-    long long cpu_idle = cpu_usage[cpu_idle_state] - cpu_usage_prev[cpu_idle_state];
+    long long cpu_idle = cpu_usage[CPU_IDLE_STATE] - cpu_usage_prev[CPU_IDLE_STATE];
     cpu_non_idle_usage_sum = cpu_usage_sum - cpu_idle;
 
     overlay_info->cpu_usage = 100.0f * cpu_non_idle_usage_sum / cpu_usage_sum;
         
-    for (int i = 0; i < cpu_states_num; i++) {
+    for (int i = 0; i < CPU_STATES_NUM; i++) {
         cpu_usage_prev[i] = cpu_usage[i];
     }
 }
@@ -51,7 +51,6 @@ static void get_cpu_usage_percent(s_overlay_info *overlay_info, long long *cpu_u
         fp = fopen("/proc/stat", "r");
 
         if (fp == NULL) {
-            fclose(fp);
             return;
         }
 
@@ -64,7 +63,7 @@ static void get_cpu_usage_percent(s_overlay_info *overlay_info, long long *cpu_u
             &cpu_usage[0], &cpu_usage[1], &cpu_usage[2], &cpu_usage[3], &cpu_usage[4], &cpu_usage[5], &cpu_usage[6], &cpu_usage[7], &cpu_usage[8], &cpu_usage[9]
         );
 
-        get_cpu_usage_percent(overlay_info, cpu_usage, cpu_usage_prev, CPU_STATES_NUM, CPU_IDLE_STATE);
+        get_cpu_usage_percent(overlay_info, cpu_usage, cpu_usage_prev);
     }
 
     static void get_cpu_temp(s_overlay_info *overlay_info) {
@@ -99,7 +98,7 @@ static void get_cpu_usage_percent(s_overlay_info *overlay_info, long long *cpu_u
         size_t len = sizeof(cpu_usage);
         sysctl(mib, 2, &cpu_usage, &len, NULL, 0);
 
-        get_cpu_usage_percent(overlay_info, cpu_usage, cpu_usage_prev, CPU_STATES_NUM, CPU_IDLE_STATE);
+        get_cpu_usage_percent(overlay_info, cpu_usage, cpu_usage_prev);
     }
 
     #if defined(__OpenBSD__)
@@ -169,7 +168,7 @@ static void get_cpu_usage_percent(s_overlay_info *overlay_info, long long *cpu_u
         size_t len;
 
         sysctlbyname("kern.cp_time", &cpu_usage, &len, NULL, 0);
-        get_cpu_usage_percent(overlay_info, cpu_usage, cpu_usage_prev, CPU_STATES_NUM, CPU_IDLE_STATE);
+        get_cpu_usage_percent(overlay_info, cpu_usage, cpu_usage_prev);
     }
 
     static void get_cpu_temp(s_overlay_info *overlay_info) {
