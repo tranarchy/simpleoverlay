@@ -210,19 +210,21 @@ static void add_text(const char *fmt, ...) {
     GLTtext **key_text = &(texts_info.key_texts[text_count]);
     GLTtext **value_text = &(texts_info.value_texts[text_count]);
 
+    va_start(args, fmt);
+    vsnprintf(text_buffer, sizeof(text_buffer), fmt, args);
+    va_end(args);
+
     if (!*key_text) {
         *key_text = gltCreateText();
+        gltSetText(*key_text, strtok(text_buffer, "|"));
+    } else {
+        strtok(text_buffer, "|");
     }
 
     if (!*value_text) {
         *value_text = gltCreateText();
     }
 
-    va_start(args, fmt);
-    vsnprintf(text_buffer, sizeof(text_buffer), fmt, args);
-    va_end(args);
-
-    gltSetText(*key_text, strtok(text_buffer, "|"));
     gltSetText(*value_text, strtok(NULL, "|"));
 
     key_width = gltGetTextWidth(*key_text, config.scale);
