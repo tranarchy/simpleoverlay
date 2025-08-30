@@ -17,8 +17,9 @@
 #if defined(__linux__)
   static void get_mem_usage(s_overlay_info *overlay_info) {
 
-      int available, total;;
-
+      int total = 0;
+      int available = 0;
+ 
       FILE *fp;
       char line[128];
 
@@ -29,16 +30,14 @@
       }
 
       while (fgets(line, sizeof(line), fp)) {
-          if (strstr(line, "MemTotal:") != NULL) {
-              if (sscanf(line, "MemTotal: %d kB", &total) == 1) {
-                  continue;
-              }
+          if (total && available) {
+            break;
           }
-
-          if (strstr(line, "MemAvailable:") != NULL) {
-              if (sscanf(line, "MemAvailable: %d kB", &available) == 1) {
-                  continue;
-              }
+      
+          if (strstr(line, "MemTotal:") != NULL) {
+              sscanf(line, "MemTotal: %d kB", &total);
+          } else if (strstr(line, "MemAvailable:") != NULL) {
+              sscanf(line, "MemAvailable: %d kB", &available);
           }
       }
 
