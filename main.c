@@ -28,9 +28,11 @@ void populate_amdgpu(s_overlay_info *overlay_info);
 typedef void (*PFNGLXSWAPBUFFERS)(Display *dpy, GLXDrawable drawable);
 typedef void* (*PFNGLXGETPROCADDRESS)(const GLubyte *procName);
 typedef void* (*PFNGLXGETPROCADDRESSARB)(const GLubyte *procName);
+typedef void (*PFNGLXDESTROYCONTEXT)(Display *dpy, GLXContext ctx);
 
 typedef EGLBoolean (*PFNEGLSWAPBUFFERS)(EGLDisplay display, EGLSurface surface);
 typedef void* (*PFNEGLGETPROCADDRESS)(char const *procname);
+typedef EGLBoolean (*PFNEGLTERMINATE)(EGLDisplay display);
 
 typedef void *(*PFNDLSYM)(void*, const char*);
 
@@ -82,8 +84,11 @@ static drmVersionPtr drm_version = NULL;
 static PFNGLXSWAPBUFFERS glXSwapBuffers_ptr = NULL;
 static PFNGLXGETPROCADDRESS glXGetProcAddress_ptr = NULL;
 static PFNGLXGETPROCADDRESSARB glXGetProcAddressARB_ptr = NULL;
+static PFNGLXDESTROYCONTEXT glXDestroyContext_ptr = NULL;
+
 static PFNEGLSWAPBUFFERS eglSwapBuffers_ptr = NULL;
 static PFNEGLGETPROCADDRESS eglGetProcAddress_ptr = NULL;
+static PFNEGLTERMINATE eglTerminate_ptr = NULL;
 
 static GLXContext glx_ctx = NULL;
 static EGLContext egl_ctx = NULL;
@@ -153,6 +158,21 @@ static EGLContext get_egl_ctx(EGLDisplay display) {
     egl_ctx = eglCreateContext(display, NULL, EGL_NO_CONTEXT, NULL);
 
     return egl_ctx;
+}
+
+static void cleanup(void) {
+    for (int i = 0; i < texts_info.text_count; i++) {
+      GLTtext *key_text = texts_info.key_texts[i];
+      GLTtext *value_text = texts_info.value_texts[i];
+
+      gltDestroyText(key_text);
+      gltDestroyText(value_text);
+
+      key_text = NULL;
+      value_text = NULL;
+    }
+
+    gltTerminate();
 }
 
 static void populate_overlay_info(void) {
@@ -296,6 +316,8 @@ EGLBoolean eglSwapBuffers(EGLDisplay display, EGLSurface surf) {
 void (*eglGetProcAddress(char const *procname))(void) {
     if (strcmp(procname, "eglSwapBuffers") == 0) {
         return (void*)eglSwapBuffers;
+    } else if (strcmp(procname, "eglTerminate") == 0) {
+        return (void*)eglTerminate;
     }
 
     if (!eglGetProcAddress_ptr) {
@@ -303,6 +325,18 @@ void (*eglGetProcAddress(char const *procname))(void) {
     }
           
     return eglGetProcAddress_ptr(procname);
+}
+
+EGLBoolean eglTerminate(EGLDisplay display) {
+    if (!eglTerminate_ptr) {
+       eglTerminate_ptr = (PFNEGLTERMINATE)dlsym_ptr(RTLD_NEXT, "eglTerminate"); 
+    }
+
+    eglDestroyContext(display, egl_ctx);
+    egl_ctx = NULL;
+    cleanup();
+
+    return eglTerminate_ptr(display);
 }
 
 void glXSwapBuffers(Display *dpy, GLXDrawable drawable) {
@@ -329,6 +363,8 @@ void glXSwapBuffers(Display *dpy, GLXDrawable drawable) {
 void (*glXGetProcAddress(const GLubyte *procName))(void) {
     if (strcmp((const char *)procName, "glXSwapBuffers") == 0) {
         return (void*)glXSwapBuffers;
+    } else if (strcmp((const char *)procName, "glXDestroyContext") == 0) {
+        return (void*)glXDestroyContext;
     }
 
     if (!glXGetProcAddress_ptr) {
@@ -341,6 +377,8 @@ void (*glXGetProcAddress(const GLubyte *procName))(void) {
 void (*glXGetProcAddressARB(const GLubyte *procName))(void) {
     if (strcmp((const char *)procName, "glXSwapBuffers") == 0) {
         return (void*)glXSwapBuffers;
+    } else if (strcmp((const char *)procName, "glXDestroyContext") == 0) {
+        return (void*)glXDestroyContext;
     }
 
     if (!glXGetProcAddressARB_ptr) {
@@ -348,6 +386,16 @@ void (*glXGetProcAddressARB(const GLubyte *procName))(void) {
     }
     
     return glXGetProcAddressARB_ptr(procName);
+}
+
+void glXDestroyContext(Display *dpy, GLXContext ctx) {
+    if (!glXDestroyContext_ptr) {
+       glXDestroyContext_ptr = (PFNGLXDESTROYCONTEXT)dlsym_ptr(RTLD_NEXT, "glXDestroyContext"); 
+    }
+
+    cleanup();
+    
+    glXDestroyContext_ptr(dpy, ctx);
 }
 
 void* dlsym(void *handle, const char *symbol) {
@@ -363,10 +411,14 @@ void* dlsym(void *handle, const char *symbol) {
         return (void*)glXGetProcAddressARB;
     } else if (strcmp(symbol, "glXSwapBuffers") == 0) {
         return (void*)glXSwapBuffers;
+    } else if (strcmp(symbol, "glXDestroyContext") == 0) {
+        return (void*)glXDestroyContext;
     } else if (strcmp(symbol, "eglGetProcAddress") == 0) {
         return (void*)eglGetProcAddress;
     } else if (strcmp(symbol, "eglSwapBuffers") == 0) {
         return (void*)eglSwapBuffers;
+    } else if (strcmp(symbol, "eglTerminate") == 0) {
+        return (void*)eglTerminate;
     }
 
     return dlsym_ptr(handle, symbol);
