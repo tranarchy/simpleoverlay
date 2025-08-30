@@ -204,6 +204,8 @@ static void add_text(const char *fmt, ...) {
     va_list args;
     char text_buffer[256];
     GLfloat key_width;
+
+    bool found_max_key_width = false; 
     
     int text_count = texts_info.text_count;
 
@@ -218,6 +220,7 @@ static void add_text(const char *fmt, ...) {
         *key_text = gltCreateText();
         gltSetText(*key_text, strtok(text_buffer, "|"));
     } else {
+        found_max_key_width = true;
         strtok(text_buffer, "|");
     }
 
@@ -227,10 +230,12 @@ static void add_text(const char *fmt, ...) {
 
     gltSetText(*value_text, strtok(NULL, "|"));
 
-    key_width = gltGetTextWidth(*key_text, config.scale);
+    if (!found_max_key_width) {
+      key_width = gltGetTextWidth(*key_text, config.scale);
 
-    if (key_width > texts_info.max_key_width) {
-        texts_info.max_key_width = key_width;
+      if (key_width > texts_info.max_key_width) {
+          texts_info.max_key_width = key_width;
+      }
     }
 
     texts_info.text_count++;
