@@ -44,19 +44,32 @@ typedef struct s_config {
 } s_config;
 
 typedef struct s_texts_info {
-    GLfloat max_value_width;
+    GLTtext *key_texts[8];
+    GLTtext *value_texts[8];
+
+    GLfloat pos_y;
     GLfloat max_key_width;
-     
-    GLfloat full_text_height;
 
     int text_count;
 } s_texts_info;
 
+static s_config config;
+static s_overlay_info overlay_info = { 0 };
+
+static s_texts_info texts_info = { 
+  .key_texts = { NULL },
+  .value_texts = { NULL },
+  .pos_y = 10.0f,
+  .max_key_width = 0.0f,
+  .text_count = 0 
+};
+
 static int frames;
-static int text_pos_y;
 
 static long long prev_time;
 static long long prev_time_frametime;
+
+static unsigned int prev_viewport[2] = { 0 }; 
 
 static drmVersionPtr drm_version = NULL;
 
@@ -72,16 +85,8 @@ static PFNGLXGETPROCADDRESSARB glXGetProcAddressARB_ptr = NULL;
 static PFNEGLSWAPBUFFERS eglSwapBuffers_ptr = NULL;
 static PFNEGLGETPROCADDRESS eglGetProcAddress_ptr = NULL;
 
-static GLTtext *key_text = NULL;
-static GLTtext *value_text = NULL;
-
 static GLXContext glx_ctx = NULL;
 static EGLContext egl_ctx = NULL;
-
-static s_config config;
-static s_overlay_info overlay_info = { 0 };
-
-static GLint old_viewport[2] = { 0 }; 
 
 static void hex_to_rgb(char *hex, float *rgb) {
   long hex_num = strtol(hex, NULL, 16);
@@ -114,7 +119,6 @@ static void init(void) {
 
   prev_time = prev_time_frametime = get_time_nano();
   frames = 0;
-  text_pos_y = 10;
 }
 
 static GLXContext get_glx_ctx(Display *dpy) {
@@ -151,7 +155,7 @@ static EGLContext get_egl_ctx(EGLDisplay display) {
     return egl_ctx;
 }
 
-static void populate_overlay_info() {
+static void populate_overlay_info(void) {
     long long cur_time = get_time_nano();
 
     frames++;
@@ -176,103 +180,95 @@ static void populate_overlay_info() {
     prev_time_frametime = cur_time;
 }
 
-static void add_text(char (*texts)[256], s_texts_info *texts_info, const char *fmt, ...) { 
+static void add_text(const char *fmt, ...) { 
     va_list args;
-    char buffer[256];
-
+    char text_buffer[256];
     GLfloat key_width;
-    GLfloat value_width;
     
-    int text_cunt = texts_info->text_count;
+    int text_count = texts_info.text_count;
+
+    GLTtext **key_text = &(texts_info.key_texts[text_count]);
+    GLTtext **value_text = &(texts_info.value_texts[text_count]);
+
+    if (!*key_text) {
+        *key_text = gltCreateText();
+    }
+
+    if (!*value_text) {
+        *value_text = gltCreateText();
+    }
 
     va_start(args, fmt);
-    vsnprintf(buffer, sizeof(buffer), fmt, args);
+    vsnprintf(text_buffer, sizeof(text_buffer), fmt, args);
     va_end(args);
 
-    strlcpy(texts[text_cunt], buffer, sizeof(texts[text_cunt]));
+    gltSetText(*key_text, strtok(text_buffer, "|"));
+    gltSetText(*value_text, strtok(NULL, "|"));
 
-    gltSetText(key_text, strtok(buffer, "|"));
-    gltSetText(value_text, strtok(NULL, "|"));
+    key_width = gltGetTextWidth(*key_text, config.scale);
 
-    key_width = gltGetTextWidth(key_text, config.scale);
-    value_width = gltGetTextWidth(value_text, config.scale);
-
-    texts_info->full_text_height += gltGetTextHeight(key_text, config.scale);
-
-    if (key_width > texts_info->max_key_width) {
-        texts_info->max_key_width = key_width;
+    if (key_width > texts_info.max_key_width) {
+        texts_info.max_key_width = key_width;
     }
 
-    if (value_width > texts_info->max_value_width) {
-        texts_info->max_value_width = value_width;
-    }
-
-    texts_info->text_count++;
+    texts_info.text_count++;
 }
 
-static void draw_texts(char (*texts)[256], s_texts_info texts_info) {
+static void draw_texts(void) {
     gltBeginDraw();
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
  
     for (int i = 0; i < texts_info.text_count; i++) {
-      char *key = strtok(texts[i], "|");
-      char *value = strtok(NULL, "|");
-
-      gltSetText(key_text, key);
-      gltSetText(value_text, value);
+      GLTtext *key_text = texts_info.key_texts[i];
+      GLTtext *value_text = texts_info.value_texts[i];
 
       gltColor(config.key_color[0], config.key_color[1], config.key_color[2], 1.0f);
-      gltDrawText2D(key_text, 10, text_pos_y, config.scale);
+      gltDrawText2D(key_text, 10, texts_info.pos_y, config.scale);
 
       gltColor(config.value_color[0], config.value_color[1], config.value_color[2], 1.0f);
-      gltDrawText2D(value_text, texts_info.max_key_width + (texts_info.max_key_width / 2.0f), text_pos_y, config.scale);
+      gltDrawText2D(value_text, texts_info.max_key_width + (texts_info.max_key_width / 2.0f), texts_info.pos_y, config.scale);
 
-      text_pos_y += gltGetLineHeight(config.scale);
+      texts_info.pos_y += gltGetLineHeight(config.scale);
     }
 
     gltEndDraw();
 }
 
-static void draw_overlay(GLint *viewport) {
+static void draw_overlay(unsigned int *viewport) {
     int width, height;
-    char texts[64][256];
-    
-    s_texts_info texts_info = { 0 };
 
     width = viewport[2];
     height = viewport[3];
 
     if (!gltInitialized) {
        gltInit();
-       
-       key_text = gltCreateText();
-       value_text = gltCreateText();
     }
 
-    if (old_viewport[0] != width || old_viewport[1] != height) {
-      glViewport(viewport[0], viewport[1], width, height);
-      gltViewport(width, height);
+    if (prev_viewport[0] != width || prev_viewport[1] != height) {
+       glViewport(viewport[0], viewport[1], width, height);
+       gltViewport(width, height);
     }
 
-    old_viewport[0] = width;
-    old_viewport[1] = height;
+    prev_viewport[0] = width;
+    prev_viewport[1] = height;
 
     populate_overlay_info();
     
-    add_text(texts, &texts_info, "FPS |%d (%.1f ms)", overlay_info.fps, overlay_info.frametime);
+    add_text("FPS |%d (%.1f ms)", overlay_info.fps, overlay_info.frametime);
     
     if (!config.fps_only) {
-      add_text(texts, &texts_info, "CPU |%d%% (%d C)", overlay_info.cpu_usage, overlay_info.cpu_temp);
-      add_text(texts, &texts_info, "GPU |%d%% (%d C)", overlay_info.gpu_usage, overlay_info.gpu_temp);
-      add_text(texts, &texts_info, "VRAM |%.2f GiB", overlay_info.gpu_mem);
-      add_text(texts, &texts_info, "RAM |%.2f GiB", overlay_info.mem);
+      add_text("CPU |%d%% (%d C)", overlay_info.cpu_usage, overlay_info.cpu_temp);
+      add_text("GPU |%d%% (%d C)", overlay_info.gpu_usage, overlay_info.gpu_temp);
+      add_text("VRAM |%.2f GiB", overlay_info.gpu_mem);
+      add_text("RAM |%.2f GiB", overlay_info.mem);
     }   
     
-    draw_texts(texts, texts_info);
+    draw_texts();
 
-    text_pos_y = 10;
+    texts_info.text_count = 0;
+    texts_info.pos_y = 10.0f;
 }
 
 EGLBoolean eglSwapBuffers(EGLDisplay display, EGLSurface surf) {
@@ -282,8 +278,11 @@ EGLBoolean eglSwapBuffers(EGLDisplay display, EGLSurface surf) {
     
     EGLContext old_ctx = eglGetCurrentContext();
 
-    GLint viewport[4];
-    glGetIntegerv(GL_VIEWPORT, viewport);
+    unsigned int viewport[4];
+    glGetIntegerv(GL_VIEWPORT, (int*)viewport);
+    
+    eglQuerySurface(display, surf, EGL_WIDTH, (EGLint*)&viewport[2]);
+    eglQuerySurface(display, surf, EGL_HEIGHT, (EGLint*)&viewport[3]);
 
     eglMakeCurrent(display, surf, surf, get_egl_ctx(display));
     
@@ -313,8 +312,11 @@ void glXSwapBuffers(Display *dpy, GLXDrawable drawable) {
 
     GLXContext old_ctx = glXGetCurrentContext();
 
-    GLint viewport[4];
-    glGetIntegerv(GL_VIEWPORT, viewport);
+    unsigned int viewport[4];
+    glGetIntegerv(GL_VIEWPORT, (int*)viewport);
+    
+    glXQueryDrawable(dpy, drawable, GLX_WIDTH, &viewport[2]);
+    glXQueryDrawable(dpy, drawable, GLX_HEIGHT, &viewport[3]);
     
     glXMakeCurrent(dpy, drawable, get_glx_ctx(dpy));
     
