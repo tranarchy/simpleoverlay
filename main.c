@@ -90,8 +90,8 @@ static PFNEGLSWAPBUFFERS eglSwapBuffers_ptr = NULL;
 static PFNEGLGETPROCADDRESS eglGetProcAddress_ptr = NULL;
 static PFNEGLTERMINATE eglTerminate_ptr = NULL;
 
-static GLXContext glx_ctx = NULL;
-static EGLContext egl_ctx = NULL;
+static GLXContext glx_ctx, prev_glx_ctx = NULL;
+static EGLContext egl_ctx, prev_egl_ctx = NULL;
 
 static void hex_to_rgb(char *hex, float *rgb) {
   long hex_num = strtol(hex, NULL, 16);
@@ -304,8 +304,10 @@ EGLBoolean eglSwapBuffers(EGLDisplay display, EGLSurface surf) {
     if (!eglSwapBuffers_ptr) {
       eglSwapBuffers_ptr = (PFNEGLSWAPBUFFERS)dlsym_ptr(RTLD_NEXT, "eglSwapBuffers");
     }
-    
-    EGLContext old_ctx = eglGetCurrentContext();
+
+    if (!prev_egl_ctx) {
+      prev_egl_ctx = eglGetCurrentContext();
+    }
 
     unsigned int viewport[4];
     glGetIntegerv(GL_VIEWPORT, (int*)viewport);
@@ -317,7 +319,7 @@ EGLBoolean eglSwapBuffers(EGLDisplay display, EGLSurface surf) {
     
     draw_overlay(viewport);
     
-    eglMakeCurrent(display, surf, surf, old_ctx);
+    eglMakeCurrent(display, surf, surf, prev_egl_ctx);
     
     return eglSwapBuffers_ptr(display, surf);
 }
@@ -353,7 +355,9 @@ void glXSwapBuffers(Display *dpy, GLXDrawable drawable) {
       glXSwapBuffers_ptr = (PFNGLXSWAPBUFFERS)dlsym_ptr(RTLD_NEXT, "glXSwapBuffers");
     }
 
-    GLXContext old_ctx = glXGetCurrentContext();
+    if (!prev_glx_ctx) {
+        prev_glx_ctx = glXGetCurrentContext();
+    }
 
     unsigned int viewport[4];
     glGetIntegerv(GL_VIEWPORT, (int*)viewport);
@@ -365,7 +369,7 @@ void glXSwapBuffers(Display *dpy, GLXDrawable drawable) {
     
     draw_overlay(viewport);
   
-    glXMakeCurrent(dpy, drawable, old_ctx);
+    glXMakeCurrent(dpy, drawable, prev_glx_ctx);
     glXSwapBuffers_ptr(dpy, drawable);
 }
 

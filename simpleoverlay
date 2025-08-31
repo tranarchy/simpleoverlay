@@ -5,4 +5,8 @@ export KEY_COLOR=9889FA
 export VALUE_COLOR=FFFFFF
 export FPS_ONLY=0
 
-exec env LD_PRELOAD="/usr/lib/libsimpleoverlay.so" "$@"
+SIMPLEOVERLAY_LIBS="/usr/lib/libsimpleoverlay.so"
+### Uncomment for multilib support
+#SIMPLEOVERLAY_LIBS="$SIMPLEOVERLAY_LIBS /usr/lib32/libsimpleoverlay.so"
+
+exec env LD_PRELOAD="$SIMPLEOVERLAY_LIBS" "$@"

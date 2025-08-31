@@ -39,6 +39,18 @@ make
 sudo make install
 ```
 
+To support 32-bit games (such as HL2) you will need to run
+
+```
+make multilib
+sudo make install_multilib
+```
+
+You will need a compiler that can compile for 32-bit, on Linux you can install `gcc-multilib`
+
+You will also need to uncomment the line in `simpleoverlay` that adds the 32-bit file to LD_PRELOAD
+
+
 ## Usage
 
 ```
