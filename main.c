@@ -81,10 +81,6 @@ static long long prev_time_frametime;
 
 static unsigned int prev_viewport[2] = { 0 }; 
 
-static void *egl_lib_ptr = NULL;
-static void *glx_lib_ptr = NULL;
-static void *x11_lib_ptr = NULL;
-
 #if defined(__FreeBSD__)
   #define dlsym_ptr dlfunc
 #else
@@ -169,8 +165,8 @@ static void *get_glx_ctx(void *dpy) {
     eh_find_obj(&libdl, "*libX11.so*");
     eh_find_sym(&libdl, "XDefaultScreen", (void **) &XDefaultScreen_ptr);
 
-    PFNGLXCHOOSEFBCONFIG glXChooseFBConfig_ptr = (PFNGLXCHOOSEFBCONFIG)original_glXGetProcAddress("glXChooseFBConfig"); 
-    PFNGLXCREATENEWCONTEXT glXCreateNewContext_ptr = (PFNGLXCREATENEWCONTEXT)original_glXGetProcAddress("glXCreateNewContext");
+    PFNGLXCHOOSEFBCONFIG glXChooseFBConfig_ptr = (PFNGLXCHOOSEFBCONFIG)original_glXGetProcAddress((const unsigned char*)"glXChooseFBConfig"); 
+    PFNGLXCREATENEWCONTEXT glXCreateNewContext_ptr = (PFNGLXCREATENEWCONTEXT)original_glXGetProcAddress((const unsigned char*)"glXCreateNewContext");
 
     int fbcount;
     void** fbc = glXChooseFBConfig_ptr(dpy, XDefaultScreen_ptr(dpy), visual_attribs, &fbcount);
@@ -392,10 +388,10 @@ void glXSwapBuffers(void *dpy, void *drawable) {
     if (!glXSwapBuffers_ptr) {
       gladLoadGL();
     
-      glXSwapBuffers_ptr = (PFNGLXSWAPBUFFERS)original_glXGetProcAddress("glXSwapBuffers");
-      glXGetCurrentContext_ptr = (PFNGLXGETCURRENTCONTEXT)original_glXGetProcAddress("glXGetCurrentContext");
-      glXQueryDrawable_ptr = (PFNGLXQUERYDRAWABLE)original_glXGetProcAddress("glXQueryDrawable");
-      glXMakeCurrent_ptr = (PFNGLXMAKECURRENT)original_glXGetProcAddress("glXMakeCurrent");
+      glXSwapBuffers_ptr = (PFNGLXSWAPBUFFERS)original_glXGetProcAddress((const unsigned char*)"glXSwapBuffers");
+      glXGetCurrentContext_ptr = (PFNGLXGETCURRENTCONTEXT)original_glXGetProcAddress((const unsigned char*)"glXGetCurrentContext");
+      glXQueryDrawable_ptr = (PFNGLXQUERYDRAWABLE)original_glXGetProcAddress((const unsigned char*)"glXQueryDrawable");
+      glXMakeCurrent_ptr = (PFNGLXMAKECURRENT)original_glXGetProcAddress((const unsigned char*)"glXMakeCurrent");
     } 
 
     if (!prev_glx_ctx) {
@@ -418,7 +414,7 @@ void glXSwapBuffers(void *dpy, void *drawable) {
 
 void glXDestroyContext(void *dpy, void *ctx) {
     if (!glXDestroyContext_ptr) {
-       glXDestroyContext_ptr = (PFNGLXDESTROYCONTEXT)original_glXGetProcAddress("glXDestroyContext"); 
+       glXDestroyContext_ptr = (PFNGLXDESTROYCONTEXT)original_glXGetProcAddress((const unsigned char*)"glXDestroyContext"); 
     }    
 
     cleanup();
@@ -444,7 +440,7 @@ void *glXGetProcAddressARB(const unsigned char *procName) {
     }
 
     if (!glXGetProcAddressARB_ptr) {
-      glXGetProcAddressARB_ptr = (PFNGLXGETPROCADDRESSARB)original_glXGetProcAddress("glXGetProcAddressARB");
+      glXGetProcAddressARB_ptr = (PFNGLXGETPROCADDRESSARB)original_glXGetProcAddress((const unsigned char*)"glXGetProcAddressARB");
     }
     
     return glXGetProcAddressARB_ptr(procName);

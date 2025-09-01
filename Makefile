@@ -1,5 +1,5 @@
 SRC = main.c glad.c util/elfhacks.c util/amdgpu.c util/cpu.c util/mem.c
-STDFLAGS = -shared -fPIC
+STDFLAGS = -shared -fPIC -Wall
 
 OUTPUT = libsimpleoverlay.so
 OUTPUT_32 = libsimpleoverlay32.so
