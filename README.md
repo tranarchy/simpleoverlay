@@ -25,10 +25,7 @@ You can modify them in the `simpleoverlay` wrapper file
 
 ## Build-time dependencies
 - C compiler
-- GNU make
-- pkg-config
-- libdrm-devel
-- libglvnd-devel
+- make
 
 ## Installing
 
@@ -39,7 +36,7 @@ make
 sudo make install
 ```
 
-To support 32-bit games (such as HL2) you will need to run
+For 32-bit game support (such as HL2) you will need to run
 
 ```
 make multilib
