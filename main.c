@@ -127,9 +127,8 @@ static void init(void) {
 
 void *original_glXGetProcAddress(const unsigned char *procName) {
       if (!glXGetProcAddress_ptr) {
-        eh_obj_t libdl;
-        eh_find_obj(&libdl, "*libGLX.so*");
-        eh_find_sym(&libdl, "glXGetProcAddress", (void **) &glXGetProcAddress_ptr);
+        void *handle = dlopen("libGL.so.1", RTLD_LAZY);
+        glXGetProcAddress_ptr = (PFNGLXGETPROCADDRESS)dlsym_ptr(handle, "glXGetProcAddress");
       }
 
       return glXGetProcAddress_ptr(procName);
@@ -137,9 +136,8 @@ void *original_glXGetProcAddress(const unsigned char *procName) {
 
 void *original_eglGetProcAddress(const char *procname) {
       if (!eglGetProcAddress_ptr) {
-        eh_obj_t libdl;
-        eh_find_obj(&libdl, "*libEGL.so*");
-        eh_find_sym(&libdl, "eglGetProcAddress", (void **) &eglGetProcAddress_ptr);
+        void *handle = dlopen("libEGL.so.1", RTLD_LAZY);
+        eglGetProcAddress_ptr = (PFNEGLGETPROCADDRESS)dlsym_ptr(handle, "eglGetProcAddress");
       }
 
       return eglGetProcAddress_ptr(procname);
@@ -451,6 +449,7 @@ void* dlsym(void *handle, const char *symbol) {
         eh_obj_t libdl;
         eh_find_obj(&libdl, "*libc.so*");
         eh_find_sym(&libdl, "dlsym", (void **) &dlsym_ptr);
+        eh_destroy_obj(&libdl);
     }
 
     if (strcmp(symbol, "eglGetProcAddress") == 0) {
