@@ -14,6 +14,14 @@
 #include "include/overlay.h"
 #include "include/elfhacks.h"
 
+#if defined(__OpenBSD__)
+  #define GL_LIB "libGL.so"
+  #define EGL_LIB "libEGL.so"
+#else
+  #define GL_LIB "libGL.so.1"
+  #define EGL_LIB "libEGL.so.1"
+#endif
+
 void populate_mem(s_overlay_info *overlay_info);
 void populate_cpu(s_overlay_info *s_overlay_info);
 void populate_amdgpu(s_overlay_info *overlay_info);
@@ -100,6 +108,8 @@ static PFNEGLMAKECURRENT eglMakeCurrent_ptr = NULL;
 static PFNEGLQUERYSURFACE eglQuerySurface_ptr = NULL;
 static PFNEGLDESTROYCONTEXT eglDestroyContext_ptr = NULL;
 
+static void *gl_handle, *egl_handle = NULL;
+
 static void *glx_ctx, *prev_glx_ctx = NULL;
 static void *egl_ctx, *prev_egl_ctx = NULL;
 
@@ -122,31 +132,20 @@ static void init(void) {
   frames = 0;
 }
 
-void *original_glXGetProcAddress(const unsigned char *procName) {
-      if (!glXGetProcAddress_ptr) {
-        void *handle = dlopen("libGL.so.1", RTLD_LAZY);
-        glXGetProcAddress_ptr = (PFNGLXGETPROCADDRESS)dlsym_ptr(handle, "glXGetProcAddress");
-      }
+void *get_libgl_addr(const char *proc_name) {
+  if (!gl_handle) {
+    gl_handle = dlopen(GL_LIB, RTLD_LAZY);
+  }
 
-      return glXGetProcAddress_ptr(procName);
+  return dlsym_ptr(gl_handle, proc_name);
 }
 
-void *original_glXGetProcAddressARB(const unsigned char *procName) {
-      if (!glXGetProcAddressARB_ptr) {
-        void *handle = dlopen("libGL.so.1", RTLD_LAZY);
-        glXGetProcAddressARB_ptr = (PFNGLXGETPROCADDRESS)dlsym_ptr(handle, "glXGetProcAddressARB");
-      }
+void *get_libegl_addr(const char *proc_name) {
+  if (!egl_handle) {
+    egl_handle = dlopen(EGL_LIB, RTLD_LAZY);
+  }
 
-      return glXGetProcAddressARB_ptr(procName);
-}
-
-void *original_eglGetProcAddress(const char *procname) {
-      if (!eglGetProcAddress_ptr) {
-        void *handle = dlopen("libEGL.so.1", RTLD_LAZY);
-        eglGetProcAddress_ptr = (PFNEGLGETPROCADDRESS)dlsym_ptr(handle, "eglGetProcAddress");
-      }
-
-      return eglGetProcAddress_ptr(procname);
+  return dlsym_ptr(egl_handle, proc_name);
 }
 
 static void *get_glx_ctx(void *dpy) {
@@ -163,14 +162,11 @@ static void *get_glx_ctx(void *dpy) {
         0x8000
     };
 
-    PFNXDEFAULTSCREEN XDefaultScreen_ptr;
-
-    eh_obj_t libdl;
-    eh_find_obj(&libdl, "*libX11.so*");
-    eh_find_sym(&libdl, "XDefaultScreen", (void **) &XDefaultScreen_ptr);
-
-    PFNGLXCHOOSEFBCONFIG glXChooseFBConfig_ptr = (PFNGLXCHOOSEFBCONFIG)original_glXGetProcAddress((const unsigned char*)"glXChooseFBConfig"); 
-    PFNGLXCREATENEWCONTEXT glXCreateNewContext_ptr = (PFNGLXCREATENEWCONTEXT)original_glXGetProcAddress((const unsigned char*)"glXCreateNewContext");
+    void *x11_handle = dlopen("libX11.so", RTLD_LAZY);
+    
+    PFNXDEFAULTSCREEN XDefaultScreen_ptr = (PFNXDEFAULTSCREEN)dlsym_ptr(x11_handle, "XDefaultScreen");
+    PFNGLXCHOOSEFBCONFIG glXChooseFBConfig_ptr = (PFNGLXCHOOSEFBCONFIG)get_libgl_addr("glXChooseFBConfig"); 
+    PFNGLXCREATENEWCONTEXT glXCreateNewContext_ptr = (PFNGLXCREATENEWCONTEXT)get_libgl_addr("glXCreateNewContext");
 
     int fbcount;
     void** fbc = glXChooseFBConfig_ptr(dpy, XDefaultScreen_ptr(dpy), visual_attribs, &fbcount);
@@ -185,7 +181,7 @@ static void *get_egl_ctx(void *display) {
         return egl_ctx;
      }
 
-    PFNEGLCREATECONTEXT eglCreateContext_ptr = (PFNEGLCREATECONTEXT)original_eglGetProcAddress("eglCreateContext");
+    PFNEGLCREATECONTEXT eglCreateContext_ptr = (PFNEGLCREATECONTEXT)get_libegl_addr("eglCreateContext");
 
     egl_ctx = eglCreateContext_ptr(display, NULL, (void*)0, NULL);
 
@@ -340,10 +336,10 @@ unsigned int eglSwapBuffers(void *display, void *surf) {
     if (!eglSwapBuffers_ptr) {
       gladLoadGL();
       
-      eglSwapBuffers_ptr = (PFNEGLSWAPBUFFERS)original_eglGetProcAddress("eglSwapBuffers");
-      eglMakeCurrent_ptr = (PFNEGLMAKECURRENT)original_eglGetProcAddress("eglMakeCurrent");
-      eglQuerySurface_ptr = (PFNEGLQUERYSURFACE)original_eglGetProcAddress("eglQuerySurface");
-      eglGetCurrentContext_ptr = (PFNEGLGETCURRENTCONTEXT)original_eglGetProcAddress("eglGetCurrentContext");
+      eglSwapBuffers_ptr = (PFNEGLSWAPBUFFERS)get_libegl_addr("eglSwapBuffers");
+      eglMakeCurrent_ptr = (PFNEGLMAKECURRENT)get_libegl_addr("eglMakeCurrent");
+      eglQuerySurface_ptr = (PFNEGLQUERYSURFACE)get_libegl_addr("eglQuerySurface");
+      eglGetCurrentContext_ptr = (PFNEGLGETCURRENTCONTEXT)get_libegl_addr("eglGetCurrentContext");
     }
 
     if (!prev_egl_ctx) {
@@ -367,8 +363,8 @@ unsigned int eglSwapBuffers(void *display, void *surf) {
 
 unsigned int eglTerminate(void *display) {
     if (!eglTerminate_ptr) {
-       eglTerminate_ptr = (PFNEGLTERMINATE)original_eglGetProcAddress("eglTerminate"); 
-       eglDestroyContext_ptr = (PFNEGLDESTROYCONTEXT)original_eglGetProcAddress("eglDestroyContext"); 
+       eglTerminate_ptr = (PFNEGLTERMINATE)get_libegl_addr("eglTerminate"); 
+       eglDestroyContext_ptr = (PFNEGLDESTROYCONTEXT)get_libegl_addr("eglDestroyContext"); 
     }
 
     eglDestroyContext_ptr(display, egl_ctx);
@@ -384,18 +380,22 @@ void (*eglGetProcAddress(char const *procname))(void) {
     } else if (strcmp(procname, "eglTerminate") == 0) {
         return (void*)eglTerminate;
     }
+
+    if (!eglGetProcAddress_ptr) {
+      eglGetProcAddress_ptr = (PFNEGLGETPROCADDRESS)get_libegl_addr("eglGetProcAddress");
+    }
           
-    return original_eglGetProcAddress(procname);
+    return eglGetProcAddress_ptr(procname);
 }
 
 void glXSwapBuffers(void *dpy, void *drawable) {
     if (!glXSwapBuffers_ptr) {
       gladLoadGL();
     
-      glXSwapBuffers_ptr = (PFNGLXSWAPBUFFERS)original_glXGetProcAddress((const unsigned char*)"glXSwapBuffers");
-      glXGetCurrentContext_ptr = (PFNGLXGETCURRENTCONTEXT)original_glXGetProcAddress((const unsigned char*)"glXGetCurrentContext");
-      glXQueryDrawable_ptr = (PFNGLXQUERYDRAWABLE)original_glXGetProcAddress((const unsigned char*)"glXQueryDrawable");
-      glXMakeCurrent_ptr = (PFNGLXMAKECURRENT)original_glXGetProcAddress((const unsigned char*)"glXMakeCurrent");
+      glXSwapBuffers_ptr = (PFNGLXSWAPBUFFERS)get_libgl_addr("glXSwapBuffers");
+      glXGetCurrentContext_ptr = (PFNGLXGETCURRENTCONTEXT)get_libgl_addr("glXGetCurrentContext");
+      glXQueryDrawable_ptr = (PFNGLXQUERYDRAWABLE)get_libgl_addr("glXQueryDrawable");
+      glXMakeCurrent_ptr = (PFNGLXMAKECURRENT)get_libgl_addr("glXMakeCurrent");
     } 
 
     if (!prev_glx_ctx) {
@@ -418,7 +418,7 @@ void glXSwapBuffers(void *dpy, void *drawable) {
 
 void glXDestroyContext(void *dpy, void *ctx) {
     if (!glXDestroyContext_ptr) {
-       glXDestroyContext_ptr = (PFNGLXDESTROYCONTEXT)original_glXGetProcAddress((const unsigned char*)"glXDestroyContext"); 
+       glXDestroyContext_ptr = (PFNGLXDESTROYCONTEXT)get_libgl_addr("glXDestroyContext"); 
     }    
 
     cleanup();
@@ -432,8 +432,12 @@ void *glXGetProcAddress(const unsigned char *procName) {
     } else if (strcmp((const char*)procName, "glXDestroyContext") == 0) {
         return (void*)glXDestroyContext;
     }
+
+    if (!glXGetProcAddress_ptr) {
+      glXGetProcAddress_ptr = (PFNGLXGETPROCADDRESS)get_libgl_addr("glXGetProcAddress");
+    }
     
-    return original_glXGetProcAddress(procName);
+    return glXGetProcAddress_ptr(procName);
 }
 
 void *glXGetProcAddressARB(const unsigned char *procName) {
@@ -443,7 +447,11 @@ void *glXGetProcAddressARB(const unsigned char *procName) {
         return (void*)glXDestroyContext;
     }
     
-    return original_glXGetProcAddressARB(procName);
+    if (!glXGetProcAddressARB_ptr) {
+      glXGetProcAddressARB_ptr = (PFNGLXGETPROCADDRESSARB)get_libgl_addr("glXGetProcAddressARB");
+    }
+    
+    return glXGetProcAddressARB_ptr(procName);
 }
 
 void* dlsym(void *handle, const char *symbol) {
