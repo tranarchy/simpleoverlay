@@ -1,7 +1,7 @@
 # simpleoverlay
 <p float="left">
-<img width=49% src="https://github.com/user-attachments/assets/73264ec0-33c2-45a9-a156-93366fc63114" />
-<img width=49% src="https://github.com/user-attachments/assets/a3011d14-7c7e-4c8a-9a36-420ceed5b45a" />
+<img width=49% src="https://github.com/user-attachments/assets/96665846-9989-4bf7-a4ba-b6e8bda1ff72" />
+<img width=49% src="https://github.com/user-attachments/assets/0c1bcac4-fa1c-44ab-aa32-97ec810f5040" />
 </p>
 
 <p align="center">OpenGL performance overlay for Linux and *BSD</p>
@@ -65,7 +65,8 @@ simpleoverlay %command%
 To get CPU temp on FreeBSD you need to load either coretemp (for Intel) or amdtemp (for AMD)
 
 ```
-kldload coretemp amdtemp
+sysrc -f /etc/rc.conf kld_list+=coretemp
+service kld restart
 ```
 
 <br>
