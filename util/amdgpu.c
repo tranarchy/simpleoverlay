@@ -60,16 +60,14 @@ void populate_amdgpu(s_overlay_info *overlay_info) {
     uint32_t minor_version;
 
     if (!device) {
-        PFNAMDGPUDEVICEINITIALIZE amdgpu_device_initialize_ptr = NULL;
-    
-        eh_obj_t libdl;
-        eh_find_obj(&libdl, "*libdrm_amdgpu.so*");
-        eh_find_sym(&libdl, "amdgpu_device_initialize", (void **) &amdgpu_device_initialize_ptr);
-        eh_find_sym(&libdl, "amdgpu_query_info", (void **) &amdgpu_query_info_ptr);
-        eh_find_sym(&libdl, "amdgpu_query_sensor_info", (void **) &amdgpu_query_sensor_info_ptr);
-    
+        PFNAMDGPUDEVICEINITIALIZE amdgpu_device_initialize_ptr;
+        void *handle = dlopen("libdrm_amdgpu.so", RTLD_LAZY);
+        amdgpu_device_initialize_ptr = (PFNAMDGPUDEVICEINITIALIZE)dlsym(handle, "amdgpu_device_initialize");
+        amdgpu_query_info_ptr = (PFNAMDGPUQUERYINFO)dlsym(handle, "amdgpu_query_info");
+        amdgpu_query_sensor_info_ptr = (PFNAMDGPUQUERYSENSORINFO)dlsym(handle, "amdgpu_query_sensor_info");
+        
         fd = open("/dev/dri/renderD128", O_RDONLY);
-        if (!amdgpu_device_initialize_ptr(fd, &major_version, &minor_version, &device)) {
+        if (amdgpu_device_initialize_ptr(fd, &major_version, &minor_version, &device) < 0) {
             close(fd);
             return;
         }
