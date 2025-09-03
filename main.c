@@ -14,14 +14,6 @@
 #include "include/overlay.h"
 #include "include/elfhacks.h"
 
-#if defined(__OpenBSD__)
-  #define GL_LIB "libGL.so"
-  #define EGL_LIB "libEGL.so"
-#else
-  #define GL_LIB "libGL.so.1"
-  #define EGL_LIB "libEGL.so.1"
-#endif
-
 void populate_mem(s_overlay_info *overlay_info);
 void populate_cpu(s_overlay_info *s_overlay_info);
 void populate_amdgpu(s_overlay_info *overlay_info);
@@ -113,6 +105,9 @@ static void *gl_handle, *egl_handle = NULL;
 static void *glx_ctx, *prev_glx_ctx = NULL;
 static void *egl_ctx, *prev_egl_ctx = NULL;
 
+static const char *gl_libs[] = { "libGL.so.1", "libGL.so" };
+static const char *egl_libs[] = { "libEGL.so.1", "libEGL.so" };
+
 static void hex_to_rgb(char *hex, float *rgb) {
   long hex_num = strtol(hex, NULL, 16);
 
@@ -134,7 +129,13 @@ static void init(void) {
 
 void *get_libgl_addr(const char *proc_name) {
   if (!gl_handle) {
-    gl_handle = dlopen(GL_LIB, RTLD_LAZY);
+    for (size_t i = 0; i < sizeof(gl_libs) / sizeof(gl_libs[0]); i++) {
+       gl_handle = dlopen(gl_libs[i], RTLD_LAZY);
+
+       if (gl_handle) {
+          break;
+       }
+    } 
   }
 
   return dlsym_ptr(gl_handle, proc_name);
@@ -142,7 +143,13 @@ void *get_libgl_addr(const char *proc_name) {
 
 void *get_libegl_addr(const char *proc_name) {
   if (!egl_handle) {
-    egl_handle = dlopen(EGL_LIB, RTLD_LAZY);
+    for (size_t i = 0; i < sizeof(egl_libs) / sizeof(egl_libs[0]); i++) {
+       egl_handle = dlopen(egl_libs[i], RTLD_LAZY);
+
+       if (egl_handle) {
+          break;
+       }
+    } 
   }
 
   return dlsym_ptr(egl_handle, proc_name);
