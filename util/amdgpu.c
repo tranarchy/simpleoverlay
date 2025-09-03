@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <stdint.h>
 
-#include "../include/overlay.h"
+#include "../include/common.h"
 #include "../include/elfhacks.h"
 
 #define AMDGPU_INFO_SENSOR_GPU_LOAD 0x4

@@ -1,4 +1,4 @@
-SRC = main.c glad.c util/elfhacks.c util/amdgpu.c util/cpu.c util/mem.c
+SRC = main.c glad.c hooks/dlsym.c hooks/egl.c hooks/glx.c util/render.c util/elfhacks.c util/amdgpu.c util/cpu.c util/mem.c
 STDFLAGS = -shared -fPIC -Wall
 
 OUTPUT = libsimpleoverlay.so

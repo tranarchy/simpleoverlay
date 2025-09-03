@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "../include/overlay.h"
+#include "../include/common.h"
 
 #if !defined(__linux__)
   #include <unistd.h>
