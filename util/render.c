@@ -120,11 +120,15 @@ static void draw_texts(void) {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
  
     for (int i = 0; i < texts_info.text_count; i++) {
-      GLTtext *key_text = texts_info.key_texts[i];
+    
       GLTtext *value_text = texts_info.value_texts[i];
 
-      gltColor(config.key_color[0], config.key_color[1], config.key_color[2], 1.0f);
-      gltDrawText2D(key_text, 10, texts_info.pos_y, config.scale);
+      if (!config.fps_only) {
+        GLTtext *key_text = texts_info.key_texts[i];
+
+        gltColor(config.key_color[0], config.key_color[1], config.key_color[2], 1.0f);
+        gltDrawText2D(key_text, 10, texts_info.pos_y, config.scale);
+      }
 
       gltColor(config.value_color[0], config.value_color[1], config.value_color[2], 1.0f);
       gltDrawText2D(value_text, texts_info.max_key_width + (texts_info.max_key_width / 2.0f), texts_info.pos_y, config.scale);
@@ -157,10 +161,12 @@ void draw_overlay(const char *gl_interface, unsigned int *viewport) {
     prev_viewport[1] = height;
 
     populate_overlay_info();
+
     
-    add_text(gl_interface, " %d FPS (%.1f ms)", overlay_info.fps, overlay_info.frametime);
-    
-    if (!config.fps_only) {
+    if (config.fps_only) {
+      add_text("", " %d", overlay_info.fps);
+    } else {
+      add_text(gl_interface, " %d FPS (%.1f ms)", overlay_info.fps, overlay_info.frametime); 
       add_text("CPU", " %d%% (%d C)", overlay_info.cpu_usage, overlay_info.cpu_temp);
       add_text("GPU", " %d%% (%d C)", overlay_info.gpu_usage, overlay_info.gpu_temp);
       add_text("VRAM", " %.2f GiB", overlay_info.gpu_mem);
