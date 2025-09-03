@@ -6,6 +6,8 @@
 #include "../include/overlay.h"
 
 #if defined(__linux__)
+    #include <dirent.h>
+
     #define CPU_IDLE_STATE 3
     #define CPU_STATES_NUM 10
 #elif defined(__OpenBSD__)
@@ -74,10 +76,42 @@ static void get_cpu_usage_percent(s_overlay_info *overlay_info, long long *cpu_u
         fp = fopen("/sys/class/thermal/thermal_zone0/temp", "r");
 
         if (fp == NULL) {
-            return;
+            DIR *dir;
+
+            char hwmon_name_buffer[128];
+            char hwmon_name_path_buffer[512];
+            char hwmon_temp_path_buffer[512];
+            
+            const char *hwmon_path = "/sys/class/hwmon";
+
+            struct dirent *entry;
+           
+            dir = opendir(hwmon_path);
+            while ((entry = readdir(dir)) != NULL) {
+                if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+                    continue;
+     
+                snprintf(hwmon_name_path_buffer, 512, "%s/%s/%s", hwmon_path, entry->d_name, "name");
+                fp = fopen(hwmon_name_path_buffer, "r");
+
+                if (fp == NULL)
+                    continue;
+
+                fgets(hwmon_name_buffer, sizeof(hwmon_name_buffer), fp);
+                fclose(fp);
+                
+                if (strstr(hwmon_name_buffer, "k10temp")) {
+                    snprintf(hwmon_temp_path_buffer, 512, "%s/%s/%s", hwmon_path, entry->d_name, "temp1_input");
+                    fp = fopen(hwmon_temp_path_buffer, "r");
+                    break;
+                }
+                
+            }
+
+            closedir(dir);
         }
 
-        fgets(temp_buff, 16, fp);
+        fgets(temp_buff, sizeof(temp_buff), fp);
         fclose(fp);
 
         overlay_info->cpu_temp = atoi(temp_buff) / 1000;
