@@ -1,5 +1,6 @@
-#include <string.h>
 #include <dlfcn.h>
+#include <string.h>
+#include <stdbool.h>
 
 #include "../include/elfhacks.h"
 
@@ -16,6 +17,8 @@ typedef void *(*PFNDLSYM)(void *handle, const char *symbol);
 
 PFNDLSYM dlsym_ptr = NULL;
 
+static bool angle = false;
+
 void *dlsym(void *handle, const char *symbol) {
     if (!dlsym_ptr) {
         #if defined(__FreeBSD__)
@@ -28,13 +31,11 @@ void *dlsym(void *handle, const char *symbol) {
         #endif
     }
 
-    if (strcmp(symbol, "eglGetProcAddress") == 0) {
-        return (void*)eglGetProcAddress;
-    } else if (strcmp(symbol, "eglSwapBuffers") == 0) {
-        return (void*)eglSwapBuffers;
-    } else if (strcmp(symbol, "eglTerminate") == 0) {
-        return (void*)eglTerminate;
-    } else if (strcmp(symbol, "glXGetProcAddress") == 0) {
+    if (strstr(symbol, "ANGLE")) {
+        angle = true;
+    }
+
+    if (strcmp(symbol, "glXGetProcAddress") == 0) {
         return (void*)glXGetProcAddress;
     } else if (strcmp(symbol, "glXGetProcAddressARB") == 0) {
         return (void*)glXGetProcAddressARB;
@@ -42,7 +43,19 @@ void *dlsym(void *handle, const char *symbol) {
         return (void*)glXSwapBuffers;
     } else if (strcmp(symbol, "glXDestroyContext") == 0) {
         return (void*)glXDestroyContext;
-    } 
+    }
+
+    if (angle) {
+        return dlsym_ptr(handle, symbol);
+    }
+
+    if (strcmp(symbol, "eglGetProcAddress") == 0) {
+        return (void*)eglGetProcAddress;
+    } else if (strcmp(symbol, "eglSwapBuffers") == 0) {
+        return (void*)eglSwapBuffers;
+    } else if (strcmp(symbol, "eglTerminate") == 0) {
+        return (void*)eglTerminate;
+    }
 
     return dlsym_ptr(handle, symbol);
 }
