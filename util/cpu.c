@@ -82,9 +82,11 @@ static void get_cpu_usage_percent(s_overlay_info *overlay_info, long long *cpu_u
             char hwmon_name_path_buffer[512];
             char hwmon_temp_path_buffer[512];
             
+            struct dirent *entry;
+
             const char *hwmon_path = "/sys/class/hwmon";
 
-            struct dirent *entry;
+            bool found_temp = false;
            
             dir = opendir(hwmon_path);
             while ((entry = readdir(dir)) != NULL) {
@@ -103,16 +105,16 @@ static void get_cpu_usage_percent(s_overlay_info *overlay_info, long long *cpu_u
                 if (strstr(hwmon_name_buffer, "k10temp")) {
                     snprintf(hwmon_temp_path_buffer, 512, "%s/%s/%s", hwmon_path, entry->d_name, "temp1_input");
                     fp = fopen(hwmon_temp_path_buffer, "r");
+                    found_temp = true;
                     break;
                 }
             }
 
             closedir(dir);
-        }
 
-        // neither thermal_zone0 nor k10temp hwmon was found
-        if (fp == NULL) {
-            return;
+            if (!found_temp) {
+                return;
+            }
         }
 
         fgets(temp_buff, sizeof(temp_buff), fp);
