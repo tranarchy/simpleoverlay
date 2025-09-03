@@ -234,9 +234,9 @@ static void populate_overlay_info(void) {
     prev_time_frametime = cur_time;
 }
 
-static void add_text(const char *fmt, ...) { 
+static void add_text(const char *key, const char *value, ...) { 
     va_list args;
-    char text_buffer[256];
+    char value_buffer[256];
     GLfloat key_width;
 
     bool found_max_key_width = false; 
@@ -246,23 +246,22 @@ static void add_text(const char *fmt, ...) {
     GLTtext **key_text = &(texts_info.key_texts[text_count]);
     GLTtext **value_text = &(texts_info.value_texts[text_count]);
 
-    va_start(args, fmt);
-    vsnprintf(text_buffer, sizeof(text_buffer), fmt, args);
+    va_start(args, value);
+    vsnprintf(value_buffer, sizeof(value_buffer), value, args);
     va_end(args);
 
     if (!*key_text) {
         *key_text = gltCreateText();
-        gltSetText(*key_text, strtok(text_buffer, "|"));
+        gltSetText(*key_text, key);
     } else {
         found_max_key_width = true;
-        strtok(text_buffer, "|");
     }
 
     if (!*value_text) {
         *value_text = gltCreateText();
     }
 
-    gltSetText(*value_text, strtok(NULL, "|"));
+    gltSetText(*value_text, value_buffer);
 
     if (!found_max_key_width) {
       key_width = gltGetTextWidth(*key_text, config.scale);
@@ -317,13 +316,13 @@ static void draw_overlay(unsigned int *viewport) {
 
     populate_overlay_info();
     
-    add_text("%s |%d FPS (%.1f ms)", glx_ctx ? "GLX" : "EGL", overlay_info.fps, overlay_info.frametime);
+    add_text( glx_ctx ? "GLX" : "EGL", " %d FPS (%.1f ms)", overlay_info.fps, overlay_info.frametime);
     
     if (!config.fps_only) {
-      add_text("CPU |%d%% (%d C)", overlay_info.cpu_usage, overlay_info.cpu_temp);
-      add_text("GPU |%d%% (%d C)", overlay_info.gpu_usage, overlay_info.gpu_temp);
-      add_text("VRAM |%.2f GiB", overlay_info.gpu_mem);
-      add_text("RAM |%.2f GiB", overlay_info.mem);
+      add_text("CPU", " %d%% (%d C)", overlay_info.cpu_usage, overlay_info.cpu_temp);
+      add_text("GPU", " %d%% (%d C)", overlay_info.gpu_usage, overlay_info.gpu_temp);
+      add_text("VRAM", " %.2f GiB", overlay_info.gpu_mem);
+      add_text("RAM", " %.2f GiB", overlay_info.mem);
     }   
     
     draw_texts();
