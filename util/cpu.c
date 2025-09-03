@@ -105,10 +105,14 @@ static void get_cpu_usage_percent(s_overlay_info *overlay_info, long long *cpu_u
                     fp = fopen(hwmon_temp_path_buffer, "r");
                     break;
                 }
-                
             }
 
             closedir(dir);
+        }
+
+        // neither thermal_zone0 nor k10temp hwmon was found
+        if (fp == NULL) {
+            return;
         }
 
         fgets(temp_buff, sizeof(temp_buff), fp);

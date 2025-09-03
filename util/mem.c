@@ -30,14 +30,14 @@
       }
 
       while (fgets(line, sizeof(line), fp)) {
-          if (total && available) {
-            break;
-          }
-      
           if (strstr(line, "MemTotal:") != NULL) {
               sscanf(line, "MemTotal: %d kB", &total);
           } else if (strstr(line, "MemAvailable:") != NULL) {
               sscanf(line, "MemAvailable: %d kB", &available);
+          }
+
+          if (total && available) {
+            break;
           }
       }
 

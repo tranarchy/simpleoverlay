@@ -1,7 +1,5 @@
 #include <stdbool.h>
 
-typedef void *(*PFNDLSYM)(void *handle, const char *symbol);
-
 typedef struct s_config {
   float scale;
   

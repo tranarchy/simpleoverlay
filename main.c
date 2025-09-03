@@ -4,7 +4,7 @@
 
 s_config config;
 
-static void hex_to_rgb(char *hex, float *rgb) {
+static void hex_to_rgb(const char *hex, float *rgb) {
   long hex_num = strtol(hex, NULL, 16);
 
   rgb[0] = ((hex_num >> 16) & 0xFF) / 255.0f;
@@ -19,3 +19,4 @@ static void init(void) {
   hex_to_rgb(getenv("VALUE_COLOR") ? getenv("VALUE_COLOR") : "FFFFFF", config.value_color);
   config.fps_only = getenv("FPS_ONLY") ? atoi(getenv("FPS_ONLY")) : false;
 }
+
