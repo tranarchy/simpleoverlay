@@ -22,6 +22,11 @@
 
     #define CPU_IDLE_STATE 4
     #define CPU_STATES_NUM 5
+#elif defined(__APPLE__)
+    #include <mach/mach.h>
+
+    #define CPU_IDLE_STATE 2
+    #define CPU_STATES_NUM 4
 #endif
 
 static long long cpu_usage[CPU_STATES_NUM];
@@ -223,6 +228,31 @@ static void get_cpu_usage_percent(s_overlay_info *overlay_info, long long *cpu_u
         }
 
         overlay_info->cpu_temp = overlay_info->cpu_temp / 10 - 273.15;
+    }
+#elif defined(__APPLE__)
+    static void get_cpu_usage(s_overlay_info *overlay_info) {
+        natural_t proc_count;
+        mach_msg_type_number_t len = HOST_VM_INFO64_COUNT;
+        processor_cpu_load_info_t cpu_load_info;
+
+        int ret = host_processor_info(mach_host_self(), PROCESSOR_CPU_LOAD_INFO, &proc_count, (processor_info_array_t *)&cpu_load_info, &len);
+
+        if (ret == -1) {
+            return;
+        }
+
+        for (int i = 0; i < CPU_STATES_NUM; i++) {
+            cpu_usage[i] = 0;
+            for (unsigned int j = 0; j < proc_count; j++) {
+                cpu_usage[i] += cpu_load_info[j].cpu_ticks[i];
+            }
+        }
+
+        get_cpu_usage_percent(overlay_info, cpu_usage, cpu_usage_prev);
+    }
+
+    static void get_cpu_temp(s_overlay_info *overlay_info) {
+        // todo implement cpu temp for macos
     }
 #endif
 

@@ -3,7 +3,7 @@
 
 #include "../include/common.h"
 
-#if !defined(__linux__)
+#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
   #include <unistd.h>
   
   #include <sys/sysctl.h>
@@ -12,6 +12,9 @@
   #if defined(__FreeBSD__)
       #include <vm/vm_param.h>
   #endif
+#elif defined(__APPLE__)
+    #include <unistd.h>
+    #include <mach/mach.h>
 #endif
 
 #if defined(__linux__)
@@ -46,7 +49,7 @@
       overlay_info->mem = total - available;
       overlay_info->mem /= (1024.0 * 1024.0);
   }
-#else
+#elif defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
   static void get_mem_usage(s_overlay_info *overlay_info) {
       int mib[2];
 
@@ -89,6 +92,26 @@
           overlay_info->mem = (total - free) / (1024.0 * 1024.0 * 1024.0);       
       #endif
   }
+#elif defined(__APPLE__)
+    void get_mem_usage(s_overlay_info *overlay_info) {
+        vm_statistics64_data_t vm_stats; 
+        mach_msg_type_number_t slen = HOST_VM_INFO64_COUNT;
+
+        int ret = host_statistics64(mach_host_self(), HOST_VM_INFO64, (host_info64_t)&vm_stats, &slen);
+
+        if (ret == -1) {
+            return;
+        }
+
+        long long pagesize = sysconf(_SC_PAGESIZE);
+
+        long long active = vm_stats.active_count * pagesize;
+        long long wire = vm_stats.wire_count * pagesize;
+        long long compression = vm_stats.compressor_page_count * pagesize;
+
+        overlay_info->mem = (active + wire + compression) / (1024.0 * 1024.0 * 1024.0);
+    }
+
 #endif
 
 void populate_mem(s_overlay_info *overlay_info) {

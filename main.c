@@ -2,6 +2,10 @@
 
 #include "include/common.h"
 
+#if defined(__APPLE__)
+  void hook_cgl(void);
+#endif
+
 s_config config;
 
 static void hex_to_rgb(const char *hex, float *rgb) {
@@ -18,5 +22,9 @@ static void init(void) {
   hex_to_rgb(getenv("KEY_COLOR") ? getenv("KEY_COLOR") : "9889FA", config.key_color);
   hex_to_rgb(getenv("VALUE_COLOR") ? getenv("VALUE_COLOR") : "FFFFFF", config.value_color);
   config.fps_only = getenv("FPS_ONLY") ? atoi(getenv("FPS_ONLY")) : false;
+
+  #if defined(__APPLE__)
+    hook_cgl();
+  #endif
 }
 

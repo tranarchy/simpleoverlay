@@ -7,7 +7,6 @@
 #include <stdint.h>
 
 #include "../include/common.h"
-#include "../include/elfhacks.h"
 
 #define AMDGPU_INFO_SENSOR_GPU_LOAD 0x4
 #define AMDGPU_INFO_VRAM_USAGE 0x10
