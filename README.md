@@ -4,13 +4,13 @@
 <img width=49% src="https://github.com/user-attachments/assets/0c1bcac4-fa1c-44ab-aa32-97ec810f5040" />
 </p>
 
-<p align="center">OpenGL performance overlay for Linux and *BSD</p>
+<p align="center">OpenGL performance overlay for Linux, macOS and *BSD</p>
 
 ## About
 
-simpleoverlay is an OpenGL performance overlay for Linux and *BSD written in C
+simpleoverlay is an OpenGL performance overlay for Linux, macOS and *BSD written in C
 
-It supports the GLX and EGL OpenGL interface
+It supports the CGL, GLX and EGL OpenGL interface
 
 ## Configuration
 
@@ -35,6 +35,10 @@ cd simpleoverlay
 make
 sudo make install
 ```
+
+If you are on macOS use `make macos`
+
+## 32-bit support
 
 For 32-bit game support (such as HL2) you will need to run
 
