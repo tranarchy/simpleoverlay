@@ -11,9 +11,9 @@ s_config config;
 static void hex_to_rgb(const char *hex, float *rgb) {
   long hex_num = strtol(hex, NULL, 16);
 
-  rgb[0] = ((hex_num >> 16) & 0xFF) / 255.0f;
-  rgb[1] = ((hex_num >> 8) & 0xFF) / 255.0f;
-  rgb[2] = (hex_num & 0xFF) / 255.0f;
+  rgb[0] = ((hex_num >> 16) & 0xFF);
+  rgb[1] = ((hex_num >> 8) & 0xFF);
+  rgb[2] = (hex_num & 0xFF);
 }
 
 __attribute__((constructor))

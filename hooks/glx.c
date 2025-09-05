@@ -5,7 +5,7 @@
 #include "../include/glad.h"
 
 void cleanup(void);
-void draw_overlay(const char *gl_interface, unsigned int *viewport);
+void draw_overlay(const char *interface, unsigned int *viewport);
 
 typedef void *(*PFNDLSYM)(void *handle, const char *symbol);
 
@@ -143,4 +143,3 @@ void *glXGetProcAddressARB(const unsigned char *procName) {
     
     return glXGetProcAddressARB_ptr(procName);
 }
-

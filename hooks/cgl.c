@@ -5,7 +5,7 @@
 
 #include "../include/glad.h"
 
-void draw_overlay(const char *gl_interface, unsigned int *viewport);
+void draw_overlay(const char *interface, unsigned int *viewport);
 
 static IMP flushBuffer_ptr;
 
