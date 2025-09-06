@@ -83,11 +83,11 @@ static void add_text(mu_Context *ctx, mu_Rect *init_rect, const char *key, const
     va_end(args);
 
     if (!config.fps_only) {
-      ctx->style->colors[MU_COLOR_TEXT] = mu_color(config.key_color[0], config.key_color[1], config.key_color[2], 255);
+      ctx->style->colors[MU_COLOR_TEXT] = mu_color(config.key_color[0], config.key_color[1], config.key_color[2], config.key_color[3]);
       mu_text(ctx, key);
     }
 
-    ctx->style->colors[MU_COLOR_TEXT] = mu_color(config.value_color[0], config.value_color[1], config.value_color[2], 255);
+    ctx->style->colors[MU_COLOR_TEXT] = mu_color(config.value_color[0], config.value_color[1], config.value_color[2], config.value_color[3]);
     mu_text(ctx, value_buffer);
 
     mu_Container *win = mu_get_container(ctx, "");
@@ -113,6 +113,7 @@ void draw_overlay(const char *interface, unsigned int *viewport) {
 
     ctx->text_width = text_width;
     ctx->text_height = text_height;
+    ctx->style->colors[MU_COLOR_WINDOWBG] = mu_color(config.bg_color[0], config.bg_color[1], config.bg_color[2], config.bg_color[3]);
 
     strlcpy(vendor, (const char*)glGetString(GL_VENDOR), 128);
 

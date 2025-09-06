@@ -1,8 +1,9 @@
 #!/bin/sh
 
 export SCALE=1.8
-export KEY_COLOR=9889FA
-export VALUE_COLOR=FFFFFF
+export BG_COLOR=10101A96
+export KEY_COLOR=9889FAFF
+export VALUE_COLOR=FFFFFFFF
 export FPS_ONLY=0
 
 if [ $(uname) != "Darwin" ]; then
@@ -13,6 +14,7 @@ if [ $(uname) != "Darwin" ]; then
     exec env LD_PRELOAD="$SIMPLEOVERLAY_LIBS" "$@"
 else
     SIMPLEOVERLAY_LIBS="/usr/local/lib/libsimpleoverlay.dylib"
+    
     exec env DYLD_INSERT_LIBRARIES="$SIMPLEOVERLAY_LIBS" "$@"
 fi
 
