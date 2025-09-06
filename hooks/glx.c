@@ -109,11 +109,12 @@ void glXSwapBuffers(void *dpy, void *drawable) {
 void glXDestroyContext(void *dpy, void *ctx) {
     if (!glXDestroyContext_ptr) {
        glXDestroyContext_ptr = (PFNGLXDESTROYCONTEXT)get_libgl_addr("glXDestroyContext"); 
-    }    
+    }
 
     cleanup();
     
     glXDestroyContext_ptr(dpy, ctx);
+    prev_glx_ctx = NULL;
 }
 
 void *glXGetProcAddress(const unsigned char *procName) {
