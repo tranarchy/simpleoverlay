@@ -27,7 +27,7 @@ simpleoverlay can be configured with the following environment variables
 You can modify them in the `simpleoverlay` wrapper file
 
 ## Build-time dependencies
-- C compiler
+- C99 compliant compiler
 - make
 
 ## Installing

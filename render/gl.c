@@ -3,7 +3,7 @@
 #include "../include/glad.h"
 #include "../include/microui.h"
 
-#include "atlas.inl"
+#include "atlas.h"
 
 #define BUFFER_SIZE 16384
 
@@ -120,7 +120,7 @@ static void push_quad(mu_Rect dst, mu_Rect src, mu_Color color) {
   index_buf[index_idx + 5] = element_idx + 1;
 }
 
-int get_text_width(const char *text, int len) {
+int gl_get_text_width(const char *text, int len) {
   int res = 0;
   for (const char *p = text; *p && len--; p++) {
     if ((*p & 0xc0) == 0x80) { continue; }
@@ -130,7 +130,7 @@ int get_text_width(const char *text, int len) {
   return res;
 }
 
-int get_text_height(void) {
+int gl_get_text_height(void) {
   return 18;
 }
 

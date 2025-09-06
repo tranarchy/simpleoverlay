@@ -1,3 +1,5 @@
+#define _XOPEN_SOURCE 500
+
 #include <time.h>
 #include <stdio.h>
 #include <stddef.h>
@@ -14,8 +16,8 @@ void gl_flush(unsigned int *viewport, float scale);
 void gl_draw_rect(mu_Rect rect, mu_Color color);
 void gl_draw_text(const char *text, mu_Vec2 pos, mu_Color color);
 
-int get_text_height(void);
-int get_text_width(const char *text, int len);
+int gl_get_text_height(void);
+int gl_get_text_width(const char *text, int len);
 
 void populate_mem(s_overlay_info *overlay_info);
 void populate_cpu(s_overlay_info *s_overlay_info);
@@ -67,11 +69,11 @@ static void populate_overlay_info(void) {
 
 static int text_width(mu_Font font, const char *text, int len) {
   if (len == -1) { len = strlen(text); }
-  return get_text_width(text, len);
+  return gl_get_text_width(text, len);
 }
 
 static int text_height(mu_Font font) {
-  return get_text_height();
+  return gl_get_text_height();
 }
 
 static void add_text(mu_Context *ctx, mu_Rect *init_rect, const char *key, const char *value, ...) { 
@@ -115,7 +117,7 @@ void draw_overlay(const char *interface, unsigned int *viewport) {
     ctx->text_height = text_height;
     ctx->style->colors[MU_COLOR_WINDOWBG] = mu_color(config.bg_color[0], config.bg_color[1], config.bg_color[2], config.bg_color[3]);
 
-    strlcpy(vendor, (const char*)glGetString(GL_VENDOR), 128);
+    strncpy(vendor, (const char*)glGetString(GL_VENDOR), 128);
 
     prev_time = prev_time_frametime = 0;
     frames = 0;
