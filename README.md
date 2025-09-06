@@ -1,22 +1,25 @@
 # simpleoverlay
 <p float="left">
-<img width=49% src="https://github.com/user-attachments/assets/96665846-9989-4bf7-a4ba-b6e8bda1ff72" />
-<img width=49% src="https://github.com/user-attachments/assets/0c1bcac4-fa1c-44ab-aa32-97ec810f5040" />
+<img width=49% src="https://github.com/user-attachments/assets/ffdd6714-a7b4-4689-8fb4-598e8ce1d9b9" />
+<img width=49% src="https://github.com/user-attachments/assets/7f44352e-4a34-4d20-9dd6-d6b5c47f9cbd" />
 </p>
 
-<p align="center">OpenGL performance overlay for Linux, macOS and *BSD</p>
+<p align="center">OpenGL performance overlay for Linux and *BSD</p>
 
 ## About
 
-simpleoverlay is an OpenGL performance overlay for Linux, macOS and *BSD written in C
+simpleoverlay is an OpenGL performance overlay for Linux and *BSD written in C
 
-It supports the CGL, GLX and EGL OpenGL interface
+It supports the GLX and EGL OpenGL interface
+
+CGL (macOS) support is WIP
 
 ## Configuration
 
 simpleoverlay can be configured with the following environment variables
 
 - SCALE
+- BG_COLOR
 - KEY_COLOR
 - VALUE_COLOR
 - FPS_ONLY
@@ -35,8 +38,6 @@ cd simpleoverlay
 make
 sudo make install
 ```
-
-If you are on macOS use `make macos`
 
 ## 32-bit support
 
