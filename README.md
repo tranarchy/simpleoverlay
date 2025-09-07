@@ -28,15 +28,14 @@ You can modify them in the `simpleoverlay` wrapper file
 
 ## Build-time dependencies
 - C99 compliant compiler
-- make
 
 ## Installing
 
 ```
 git clone https://github.com/tranarchy/simpleoverlay
 cd simpleoverlay
-make
-sudo make install
+./build.sh
+sudo ./build.sh install
 ```
 
 ## 32-bit support
@@ -44,8 +43,8 @@ sudo make install
 For 32-bit game support (such as HL2) you will need to run
 
 ```
-make multilib
-sudo make install_multilib
+./build.sh multilib
+sudo ./build.sh install_multilib
 ```
 
 You will need a compiler that can compile for 32-bit, on Linux you can install `gcc-multilib`

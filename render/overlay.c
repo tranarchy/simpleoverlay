@@ -117,7 +117,7 @@ void draw_overlay(const char *interface, unsigned int *viewport) {
     ctx->text_height = text_height;
     ctx->style->colors[MU_COLOR_WINDOWBG] = mu_color(config.bg_color[0], config.bg_color[1], config.bg_color[2], config.bg_color[3]);
 
-    strncpy(vendor, (const char*)glGetString(GL_VENDOR), 128);
+    strcpy(vendor, (const char*)glGetString(GL_VENDOR));
 
     prev_time = prev_time_frametime = 0;
     frames = 0;
