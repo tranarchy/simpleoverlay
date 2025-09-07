@@ -81,7 +81,7 @@ static void add_text(mu_Context *ctx, mu_Rect *init_rect, const char *key, const
     char value_buffer[256];
 
     va_start(args, value);
-    vsnprintf(value_buffer, sizeof(value_buffer), value, args);
+    vsprintf(value_buffer, value, args);
     va_end(args);
 
     if (!config.fps_only) {
