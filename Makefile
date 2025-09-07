@@ -1,4 +1,4 @@
-SRC = main.c microui.c glad.c hooks/dlsym.c hooks/egl.c hooks/glx.c render/gl.c render/overlay.c util/elfhacks.c util/amdgpu.c util/cpu.c util/mem.c
+SRC = main.c microui.c glad.c hooks/dlsym.c hooks/egl.c hooks/glx.c hooks/vulkan.c render/gl.c render/overlay.c util/elfhacks.c util/amdgpu.c util/cpu.c util/mem.c
 SRC_MACOS = main.c microui.c glad.c hooks/cgl.c render/gl.c render/overlay.c util/amdgpu.c util/cpu.c util/mem.c
 
 STDFLAGS = -shared -fPIC -Wall

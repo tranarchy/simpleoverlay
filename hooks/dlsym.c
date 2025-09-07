@@ -13,6 +13,10 @@ void glXDestroyContext(void *dpy, void *ctx);
 void *glXGetProcAddress(const unsigned char *procName);
 void *glXGetProcAddressARB(const unsigned char *procName);
 
+void *vkQueuePresentKHR(void *queue, void* pPresentInfo);
+void *vkGetInstanceProcAddr(void *instance, const char* pName);
+void *vkGetDeviceProcAddr(void *device, const char* pName);
+
 typedef void *(*PFNDLSYM)(void *handle, const char *symbol);
 
 PFNDLSYM dlsym_ptr = NULL;
@@ -55,6 +59,12 @@ void *dlsym(void *handle, const char *symbol) {
         return (void*)eglSwapBuffers;
     } else if (strcmp(symbol, "eglTerminate") == 0) {
         return (void*)eglTerminate;
+    } else if (strcmp(symbol, "vkGetInstanceProcAddr") == 0) {
+        return (void*)vkGetInstanceProcAddr;
+    } else if (strcmp(symbol, "vkGetDeviceProcAddr") == 0) {
+        return (void*)vkGetDeviceProcAddr;
+    } else if (strcmp(symbol, "vkQueuePresentKHR") == 0) {
+        return (void*)vkQueuePresentKHR;
     }
 
     return dlsym_ptr(handle, symbol);
