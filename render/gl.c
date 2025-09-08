@@ -7,50 +7,125 @@
 
 #define BUFFER_SIZE 16384
 
-static GLfloat   tex_buf[BUFFER_SIZE *  8];
-static GLfloat  vert_buf[BUFFER_SIZE *  8];
-static GLubyte color_buf[BUFFER_SIZE * 16];
-static GLuint  index_buf[BUFFER_SIZE *  6];
+#define _MAT4_INDEX(row, column) ((row) + (column) * 4)
 
-static int buf_idx, height;
+static const GLchar* vertexShaderSource =
+    "#version 330 core\n"
+    "layout (location = 0) in vec2 position;\n"
+    "layout (location = 1) in vec4 color;\n"
+    "layout (location = 2) in vec2 texCoord;\n"
+    "out vec4 ourColor;\n"
+    "out vec2 ourTexCoord;\n"
+    "uniform mat4 projection;\n"
+    "void main() {\n"
+    "    gl_Position = projection * vec4(position, 0.0f, 1.0f);\n"
+    "    ourColor = color;\n"
+    "    ourTexCoord = texCoord;\n"
+    "}\n";
 
-void gl_flush(unsigned int *viewport, float scale) {
-  if (buf_idx == 0) { return; }
+static const GLchar* fragmentShaderSource =
+    "#version 330 core\n"
+    "out vec4 FragColor;\n"
+    "in vec2 ourTexCoord;\n"
+    "in vec4 ourColor;\n"
+    "uniform sampler2D ourTexture;\n"
+    "void main() {\n"
+    "   vec4 texColor = texture(ourTexture, ourTexCoord);\n"
+    "   FragColor = vec4(ourColor.rgb, ourColor.a * texColor.r);\n"
+    "}\n";
 
-  height = viewport[3];
-  
-  glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
-  glMatrixMode(GL_PROJECTION);
-  glPushMatrix();
-  glLoadIdentity();
-  glOrtho(0.0f, viewport[2], viewport[3], 0.0f, -1.0f, +1.0f);
-  glMatrixMode(GL_MODELVIEW);
-  glPushMatrix();
-  glLoadIdentity();
+static GLfloat vertices[BUFFER_SIZE * 32];
+static GLuint  index_buf[BUFFER_SIZE * 6];
 
-  glScalef(scale, scale, 1.0f);
+static GLfloat projection_matrix[16];
 
-  glTexCoordPointer(2, GL_FLOAT, 0, tex_buf);
-  glVertexPointer(2, GL_FLOAT, 0, vert_buf);
-  glColorPointer(4, GL_UNSIGNED_BYTE, 0, color_buf);
-  glDrawElements(GL_TRIANGLES, buf_idx * 6, GL_UNSIGNED_INT, index_buf);
+static GLint shaderProgram;
+static GLuint ebo, vao, vbo, id;
 
-  glMatrixMode(GL_MODELVIEW);
-  glPopMatrix();
-  glMatrixMode(GL_PROJECTION);
-  glPopMatrix();
+static int prev_size[2];
 
-  buf_idx = 0;
+static int buf_idx, projection_location, texture_location;
+
+static void mat4_mult(const GLfloat lhs[16], const GLfloat rhs[16], GLfloat result[16])
+{
+	int c, r, i;
+
+	for (c = 0; c < 4; c++)
+	{
+		for (r = 0; r < 4; r++)
+		{
+			result[_MAT4_INDEX(r, c)] = 0.0f;
+
+			for (i = 0; i < 4; i++)
+				result[_MAT4_INDEX(r, c)] += lhs[_MAT4_INDEX(r, i)] * rhs[_MAT4_INDEX(i, c)];
+		}
+	}
+}
+
+static void get_projection_matrix(int width, int height)
+{
+	const GLfloat left = 0.0f;
+	const GLfloat right = (GLfloat)width;
+	const GLfloat bottom = (GLfloat)height;
+	const GLfloat top = 0.0f;
+	const GLfloat zNear = -1.0f;
+	const GLfloat zFar = 1.0f;
+
+	const GLfloat projection[16] = {
+		(2.0f / (right - left)), 0.0f, 0.0f, 0.0f,
+		0.0f, (2.0f / (top - bottom)), 0.0f, 0.0f,
+		0.0f, 0.0f, (-2.0f / (zFar - zNear)), 0.0f,
+
+		-((right + left) / (right - left)),
+		-((top + bottom) / (top - bottom)),
+		-((zFar + zNear) / (zFar - zNear)),
+		1.0f,
+	};
+
+	memcpy(projection_matrix, projection, 16 * sizeof(GLfloat));
 }
 
 void gl_init(void) {
-  /* init gl */
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  glEnable(GL_TEXTURE_2D);
-  glEnableClientState(GL_VERTEX_ARRAY);
-  glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-  glEnableClientState(GL_COLOR_ARRAY);
+  GLint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+  glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+  glCompileShader(vertexShader);
+  
+  GLint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+  glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+  glCompileShader(fragmentShader);
+ 
+  shaderProgram = glCreateProgram();
+  glAttachShader(shaderProgram, vertexShader);
+  glAttachShader(shaderProgram, fragmentShader);
+  glLinkProgram(shaderProgram);
+ 
+  glDeleteShader(vertexShader);
+  glDeleteShader(fragmentShader);
+
+  glGenVertexArrays(1, &vao);
+  glGenBuffers(1, &vbo);
+  glGenBuffers(1, &ebo);
+
+  glBindVertexArray(vao);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
+
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(index_buf), index_buf, GL_DYNAMIC_DRAW);
+
+  // pos
+  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
+  glEnableVertexAttribArray(0);
+
+  // color
+  glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(2 * sizeof(GLfloat)));
+  glEnableVertexAttribArray(1);
+
+  // texture
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
+  glEnableVertexAttribArray(2);
+
+  glBindVertexArray(0);
 
   for(int i=0; i<128; i++) {
     for(int j=0; j<128; j++) {
@@ -62,62 +137,141 @@ void gl_init(void) {
     }
   }
 
-  /* init texture */
-  GLuint id;
   glGenTextures(1, &id);
   glBindTexture(GL_TEXTURE_2D, id);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, ATLAS_WIDTH, ATLAS_HEIGHT, 0,
-    GL_ALPHA, GL_UNSIGNED_BYTE, atlas_texture);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, ATLAS_WIDTH, ATLAS_HEIGHT, 0,
+    GL_RED, GL_UNSIGNED_BYTE, atlas_texture);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+  projection_location = glGetUniformLocation(shaderProgram, "projection");
+  texture_location = glGetUniformLocation(shaderProgram, "ourTexture");
+  
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, id);
+  
+  glUniform1i(texture_location, 0);
+
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+  glUseProgram(shaderProgram);
+}
+
+void gl_flush(unsigned int* viewport, float scale) {
+  if (buf_idx == 0) { return; }
+  
+  int width = viewport[2];
+  int height = viewport[3];
+
+  if (width != prev_size[0] || height != prev_size[1]) {
+    glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+  
+    get_projection_matrix(viewport[2], viewport[3]);
+
+    const GLfloat model[16] = {
+      scale, 0.0f, 0.0f, 0.0f,
+      0.0f, scale, 0.0f, 0.0f,
+      0.0f, 0.0f,  scale, 0.0f,
+      0, 0, 0.0f, 1.0f,
+    };
+
+    GLfloat mvp[16];
+    mat4_mult(projection_matrix, model, mvp);
+
+    glUniformMatrix4fv(projection_location, 1, GL_FALSE, mvp);
+
+  }
+
+  prev_size[0] = width;
+  prev_size[1] = height;
+
+  glBindVertexArray(vao);
+  
+  glBindBuffer(GL_ARRAY_BUFFER, vbo);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), NULL, GL_DYNAMIC_DRAW);
+  glBufferSubData(GL_ARRAY_BUFFER, 0, buf_idx * 32 * sizeof(GLfloat), vertices);
+
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(index_buf), NULL, GL_DYNAMIC_DRAW);
+  glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, buf_idx * 6 * sizeof(GLuint), index_buf);
+
+  glDrawElements(GL_TRIANGLES, buf_idx * 6, GL_UNSIGNED_INT, 0);
+  glBindVertexArray(0);
+
+  buf_idx = 0;
 }
 
 static void push_quad(mu_Rect dst, mu_Rect src, mu_Color color) {
-  //if (buf_idx == BUFFER_SIZE) { gl_flush(); }
-
-  int texvert_idx = buf_idx *  8;
-  int   color_idx = buf_idx * 16;
-  int element_idx = buf_idx *  4;
-  int   index_idx = buf_idx *  6;
+  int vertex_idx = buf_idx * 32;
+  int element_idx = buf_idx * 4;
+  int   index_idx = buf_idx * 6;
   buf_idx++;
 
-  /* update texture buffer */
+  float r = color.r / 255.0f;
+  float g = color.g / 255.0f;
+  float b = color.b / 255.0f;
+  float a = color.a / 255.0f;
+
   float x = src.x / (float) ATLAS_WIDTH;
   float y = src.y / (float) ATLAS_HEIGHT;
   float w = src.w / (float) ATLAS_WIDTH;
   float h = src.h / (float) ATLAS_HEIGHT;
-  tex_buf[texvert_idx + 0] = x;
-  tex_buf[texvert_idx + 1] = y;
-  tex_buf[texvert_idx + 2] = x + w;
-  tex_buf[texvert_idx + 3] = y;
-  tex_buf[texvert_idx + 4] = x;
-  tex_buf[texvert_idx + 5] = y + h;
-  tex_buf[texvert_idx + 6] = x + w;
-  tex_buf[texvert_idx + 7] = y + h;
 
-  /* update vertex buffer */
-  vert_buf[texvert_idx + 0] = dst.x;
-  vert_buf[texvert_idx + 1] = dst.y;
-  vert_buf[texvert_idx + 2] = dst.x + dst.w;
-  vert_buf[texvert_idx + 3] = dst.y;
-  vert_buf[texvert_idx + 4] = dst.x;
-  vert_buf[texvert_idx + 5] = dst.y + dst.h;
-  vert_buf[texvert_idx + 6] = dst.x + dst.w;
-  vert_buf[texvert_idx + 7] = dst.y + dst.h;
+  vertices[vertex_idx++] = dst.x;
+  vertices[vertex_idx++] = dst.y;
 
-  /* update color buffer */
-  memcpy(color_buf + color_idx +  0, &color, 4);
-  memcpy(color_buf + color_idx +  4, &color, 4);
-  memcpy(color_buf + color_idx +  8, &color, 4);
-  memcpy(color_buf + color_idx + 12, &color, 4);
+  vertices[vertex_idx++] = r;
+  vertices[vertex_idx++] = g;
+  vertices[vertex_idx++] = b;
+  vertices[vertex_idx++] = a;
 
-  /* update index buffer */
-  index_buf[index_idx + 0] = element_idx + 0;
-  index_buf[index_idx + 1] = element_idx + 1;
-  index_buf[index_idx + 2] = element_idx + 2;
-  index_buf[index_idx + 3] = element_idx + 2;
-  index_buf[index_idx + 4] = element_idx + 3;
-  index_buf[index_idx + 5] = element_idx + 1;
+  vertices[vertex_idx++] = x;
+  vertices[vertex_idx++] = y;
+
+  vertices[vertex_idx++] = dst.x + dst.w;
+  vertices[vertex_idx++] = dst.y;
+
+  vertices[vertex_idx++] = r;
+  vertices[vertex_idx++] = g;
+  vertices[vertex_idx++] = b;
+  vertices[vertex_idx++] = a;
+
+  vertices[vertex_idx++] = x + w;
+  vertices[vertex_idx++] = y;
+
+  vertices[vertex_idx++] = dst.x;
+  vertices[vertex_idx++] = dst.y + dst.h;
+
+  vertices[vertex_idx++] = r;
+  vertices[vertex_idx++] = g;
+  vertices[vertex_idx++] = b;
+  vertices[vertex_idx++] = a;
+
+  vertices[vertex_idx++] = x;
+  vertices[vertex_idx++] = y + h;
+
+  vertices[vertex_idx++] = dst.x + dst.w;
+  vertices[vertex_idx++] = dst.y + dst.h;
+
+  vertices[vertex_idx++] = r;
+  vertices[vertex_idx++] = g;
+  vertices[vertex_idx++] = b;
+  vertices[vertex_idx++] = a;
+
+  vertices[vertex_idx++] = x + w;
+  vertices[vertex_idx++] = y + h;
+
+  index_buf[index_idx++] = element_idx + 0;
+  index_buf[index_idx++] = element_idx + 1;
+  index_buf[index_idx++] = element_idx + 2;
+  index_buf[index_idx++] = element_idx + 2;
+  index_buf[index_idx++] = element_idx + 3;
+  index_buf[index_idx++] = element_idx + 1;
 }
 
 int gl_get_text_width(const char *text, int len) {

@@ -12,7 +12,7 @@
 #include "../include/microui.h"
 
 void gl_init(void);
-void gl_flush(unsigned int *viewport, float scale);
+void gl_flush(unsigned int* viewport, float scale);
 void gl_draw_rect(mu_Rect rect, mu_Color color);
 void gl_draw_text(const char *text, mu_Vec2 pos, mu_Color color);
 
@@ -112,7 +112,7 @@ void draw_overlay(const char *interface, unsigned int *viewport) {
     ctx = malloc(sizeof(mu_Context));
     mu_init(ctx);
     gl_init();
-
+   
     ctx->text_width = text_width;
     ctx->text_height = text_height;
     ctx->style->colors[MU_COLOR_WINDOWBG] = mu_color(config.bg_color[0], config.bg_color[1], config.bg_color[2], config.bg_color[3]);
@@ -138,7 +138,7 @@ void draw_overlay(const char *interface, unsigned int *viewport) {
   if (mu_begin_window_ex(ctx, "", init_rect, opt)) {
     mu_Container *win = mu_get_container(ctx, "");
     win->rect.h = 0;
-  
+
     mu_layout_row(ctx, 2, (int[]) { 50, -1 }, 0);
     if (config.fps_only) {
       add_text(ctx, &init_rect, "", "%d", overlay_info.fps);
@@ -157,8 +157,6 @@ void draw_overlay(const char *interface, unsigned int *viewport) {
 
   mu_end(ctx);
 
-  gl_flush(viewport, config.scale);
-
   mu_Command *cmd = NULL;
   while (mu_next_command(ctx, &cmd)) {    
     switch (cmd->type) {
@@ -166,4 +164,6 @@ void draw_overlay(const char *interface, unsigned int *viewport) {
         case MU_COMMAND_RECT: gl_draw_rect(cmd->rect.rect, cmd->rect.color); break;
     }
   }
+
+  gl_flush(viewport, config.scale);
 }

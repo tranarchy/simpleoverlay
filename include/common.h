@@ -3,9 +3,9 @@
 typedef struct s_config {
   float scale;
 
-  float bg_color[4];
-  float key_color[4];
-  float value_color[4];
+  int bg_color[4];
+  int key_color[4];
+  int value_color[4];
 
   bool fps_only;
 } s_config;
