@@ -8,8 +8,6 @@
 
 s_config config;
 
-#include <stdio.h>
-
 static void hex_to_rgba(const char *hex, int *rgba) {
   long hex_num = strtol(hex, NULL, 16);
 
