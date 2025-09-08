@@ -212,6 +212,8 @@ static void get_cpu_usage_percent(s_overlay_info *overlay_info, long long *cpu_u
     static void get_cpu_usage(s_overlay_info *overlay_info) {
         size_t len;
 
+        len = sizeof(cpu_usage);
+
         sysctlbyname("kern.cp_time", &cpu_usage, &len, NULL, 0);
         get_cpu_usage_percent(overlay_info, cpu_usage, cpu_usage_prev);
     }
