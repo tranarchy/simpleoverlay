@@ -150,10 +150,7 @@ void gl_init(void) {
 
   projection_location = glGetUniformLocation(shaderProgram, "projection");
   texture_location = glGetUniformLocation(shaderProgram, "ourTexture");
-  
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, id);
-  
+   
   glUniform1i(texture_location, 0);
 
   glEnable(GL_BLEND);
