@@ -3,7 +3,7 @@
 set -e
 
 SRC="main.c microui.c glad.c render/gl.c render/overlay.c util/amdgpu.c util/cpu.c util/mem.c"
-STDFLAGS="-std=c99 -shared -fPIC -O2 -Wall"
+STDFLAGS="-std=c99 -shared -fPIC -Wall"
 
 OUTPUT="libsimpleoverlay.so"
 OUTPUT_32="libsimpleoverlay32.so"
@@ -27,7 +27,7 @@ if [ "$TARGET" = "" ]; then
 elif [ "$TARGET" = "multilib" ]; then
 		set -x
 		
-		cc $SRC -m32 $STDFLAGS -o $OUTPUT
+		cc $SRC -m32 $STDFLAGS -o $OUTPUT_32
 elif [ "$TARGET" = "install" ]; then
 		set -x
 		

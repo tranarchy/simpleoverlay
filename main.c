@@ -9,7 +9,7 @@
 s_config config;
 
 static void hex_to_rgba(const char *hex, int *rgba) {
-  long hex_num = strtol(hex, NULL, 16);
+  unsigned long hex_num = strtoul(hex, NULL, 16);
 
   rgba[0] = ((hex_num >> 24) & 0xFF);
   rgba[1] = ((hex_num >> 16) & 0xFF);
