@@ -68,9 +68,8 @@ unsigned int eglSwapBuffers(void *display, void *surf) {
       eglGetCurrentContext_ptr = (PFNEGLGETCURRENTCONTEXT)get_libegl_addr("eglGetCurrentContext");
     }
 
-    if (!prev_egl_ctx) {
-      prev_egl_ctx = eglGetCurrentContext_ptr();
-    }
+
+    prev_egl_ctx = eglGetCurrentContext_ptr();
 
     int viewport[4];
     glGetIntegerv(GL_VIEWPORT, viewport);

@@ -88,9 +88,7 @@ void glXSwapBuffers(void *dpy, void *drawable) {
       glXMakeCurrent_ptr = (PFNGLXMAKECURRENT)get_libgl_addr("glXMakeCurrent");
     } 
 
-    if (!prev_glx_ctx) {
-        prev_glx_ctx = glXGetCurrentContext_ptr();
-    }
+    prev_glx_ctx = glXGetCurrentContext_ptr();
 
     unsigned int viewport[4];
     glGetIntegerv(GL_VIEWPORT, (int*)viewport);
@@ -101,7 +99,6 @@ void glXSwapBuffers(void *dpy, void *drawable) {
     glXMakeCurrent_ptr(dpy, drawable, get_glx_ctx(dpy));
     
     draw_overlay("GLX", viewport);
-  
     glXMakeCurrent_ptr(dpy, drawable, prev_glx_ctx);
     glXSwapBuffers_ptr(dpy, drawable);
 }
@@ -114,7 +111,6 @@ void glXDestroyContext(void *dpy, void *ctx) {
     cleanup();
     
     glXDestroyContext_ptr(dpy, ctx);
-    prev_glx_ctx = NULL;
 }
 
 void *glXGetProcAddress(const unsigned char *procName) {
