@@ -3,13 +3,13 @@
 
 #include "../include/common.h"
 
-#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
+#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
   #include <unistd.h>
   
   #include <sys/sysctl.h>
   #include <sys/vmmeter.h>
 
-  #if defined(__FreeBSD__)
+  #if defined(__FreeBSD__) || defined(__DragonFly__)
       #include <vm/vm_param.h>
   #endif
 #elif defined(__APPLE__)
@@ -49,7 +49,7 @@
       overlay_info->mem = total - available;
       overlay_info->mem /= (1024.0 * 1024.0);
   }
-#elif defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
+#elif defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
   static void get_mem_usage(s_overlay_info *overlay_info) {
       int mib[2];
 
@@ -60,7 +60,7 @@
 
       mib[0] = CTL_HW;
 
-      #if defined(__FreeBSD__)
+      #if defined(__FreeBSD__) || defined(__DragonFly__)
           mib[1] = HW_PHYSMEM;
       #else
           mib[1] = HW_PHYSMEM64;

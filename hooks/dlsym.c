@@ -25,7 +25,7 @@ static bool angle = false;
 
 void *dlsym(void *handle, const char *symbol) {
     if (!dlsym_ptr) {
-        #if defined(__FreeBSD__)
+        #if defined(__FreeBSD__) || defined(__DragonFly__)
             dlsym_ptr = (PFNDLSYM)&dlfunc;
         #else
             eh_obj_t libc;

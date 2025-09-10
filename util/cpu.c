@@ -17,7 +17,7 @@
 
     #define CPU_IDLE_STATE 5 
     #define CPU_STATES_NUM 6
-#elif defined(__FreeBSD__) || defined(__NetBSD__)
+#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
     #include <sys/sysctl.h>
 
     #define CPU_IDLE_STATE 4
@@ -208,7 +208,7 @@ static void get_cpu_usage_percent(s_overlay_info *overlay_info, long long *cpu_u
         }
     
     #endif
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
     static void get_cpu_usage(s_overlay_info *overlay_info) {
         size_t len;
 
