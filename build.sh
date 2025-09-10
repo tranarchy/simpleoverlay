@@ -2,7 +2,7 @@
 
 set -e
 
-SRC="main.c microui.c glad.c render/gl.c render/overlay.c util/amdgpu.c util/cpu.c util/mem.c"
+SRC="main.c microui.c glad.c render/gl1.c render/gl3.c render/math.c render/overlay.c util/amdgpu.c util/cpu.c util/mem.c"
 STDFLAGS="-std=c99 -shared -fPIC -Wall"
 
 OUTPUT="libsimpleoverlay.so"

@@ -11,17 +11,39 @@
 #include "../include/common.h"
 #include "../include/microui.h"
 
-void gl_init(void);
-void gl_flush(unsigned int* viewport, float scale);
-void gl_draw_rect(mu_Rect rect, mu_Color color);
-void gl_draw_text(const char *text, mu_Vec2 pos, mu_Color color);
+typedef void (*PFNGLINIT)(void);
+typedef void (*PFNGLFLUSH)(unsigned int* viewport, float scale);
+typedef void (*PFNGLDRAWRECT)(mu_Rect rect, mu_Color color);
+typedef void (*PFNGLDRAWTEXT)(const char *text, mu_Vec2 pos, mu_Color color);
+typedef int (*PFNGLGETTEXTHEIGHT)(void);
+typedef int (*PFNGLGETTEXTWIDTH)(const char *text, int len);
 
-int gl_get_text_height(void);
-int gl_get_text_width(const char *text, int len);
+void gl1_init(void);
+void gl1_flush(unsigned int* viewport, float scale);
+void gl1_draw_rect(mu_Rect rect, mu_Color color);
+void gl1_draw_text(const char *text, mu_Vec2 pos, mu_Color color);
+
+int gl1_get_text_height(void);
+int gl1_get_text_width(const char *text, int len);
+
+void gl3_init(void);
+void gl3_flush(unsigned int* viewport, float scale);
+void gl3_draw_rect(mu_Rect rect, mu_Color color);
+void gl3_draw_text(const char *text, mu_Vec2 pos, mu_Color color);
+
+int gl3_get_text_height(void);
+int gl3_get_text_width(const char *text, int len);
 
 void populate_mem(s_overlay_info *overlay_info);
 void populate_cpu(s_overlay_info *s_overlay_info);
 void populate_amdgpu(s_overlay_info *overlay_info);
+
+static PFNGLINIT gl_init_ptr = NULL;
+static PFNGLFLUSH gl_flush_ptr = NULL;
+static PFNGLDRAWRECT gl_draw_rect_ptr = NULL;
+static PFNGLDRAWTEXT gl_draw_text_ptr = NULL;
+static PFNGLGETTEXTHEIGHT gl_get_text_height_ptr = NULL;
+static PFNGLGETTEXTWIDTH gl_get_text_width_ptr = NULL;
 
 extern s_config config;
 
@@ -30,7 +52,7 @@ static int frames;
 static long long prev_time;
 static long long prev_time_frametime;
 
-char vendor[128];
+static char vendor[128];
 
 static mu_Context *ctx = NULL;
 
@@ -69,11 +91,11 @@ static void populate_overlay_info(void) {
 
 static int text_width(mu_Font font, const char *text, int len) {
   if (len == -1) { len = strlen(text); }
-  return gl_get_text_width(text, len);
+  return gl_get_text_width_ptr(text, len);
 }
 
 static int text_height(mu_Font font) {
-  return gl_get_text_height();
+  return gl_get_text_height_ptr();
 }
 
 static void add_text(mu_Context *ctx, mu_Rect *init_rect, const char *key, const char *value, ...) { 
@@ -111,7 +133,27 @@ void draw_overlay(const char *interface, unsigned int *viewport) {
   if (!ctx) {
     ctx = malloc(sizeof(mu_Context));
     mu_init(ctx);
-    gl_init();
+
+    int gl_major_version;
+    glGetIntegerv(GL_MAJOR_VERSION, &gl_major_version);
+
+    if (gl_major_version < 3) {
+      gl_init_ptr = &gl1_init;
+      gl_flush_ptr = &gl1_flush;
+      gl_draw_rect_ptr = &gl1_draw_rect;
+      gl_draw_text_ptr = &gl1_draw_text;
+      gl_get_text_height_ptr = &gl1_get_text_height;
+      gl_get_text_width_ptr = &gl1_get_text_width;
+    } else {
+      gl_init_ptr = &gl3_init;
+      gl_flush_ptr = &gl3_flush;
+      gl_draw_rect_ptr = &gl3_draw_rect;
+      gl_draw_text_ptr = &gl3_draw_text;
+      gl_get_text_height_ptr = &gl3_get_text_height;
+      gl_get_text_width_ptr = &gl3_get_text_width;
+    }
+
+    gl_init_ptr();
    
     ctx->text_width = text_width;
     ctx->text_height = text_height;
@@ -160,10 +202,10 @@ void draw_overlay(const char *interface, unsigned int *viewport) {
   mu_Command *cmd = NULL;
   while (mu_next_command(ctx, &cmd)) {    
     switch (cmd->type) {
-        case MU_COMMAND_TEXT: gl_draw_text(cmd->text.str, cmd->text.pos, cmd->text.color); break;
-        case MU_COMMAND_RECT: gl_draw_rect(cmd->rect.rect, cmd->rect.color); break;
+        case MU_COMMAND_TEXT: gl_draw_text_ptr(cmd->text.str, cmd->text.pos, cmd->text.color); break;
+        case MU_COMMAND_RECT: gl_draw_rect_ptr(cmd->rect.rect, cmd->rect.color); break;
     }
   }
 
-  gl_flush(viewport, config.scale);
+  gl_flush_ptr(viewport, config.scale);
 }

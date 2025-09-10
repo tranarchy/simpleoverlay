@@ -7,7 +7,8 @@
 
 #define BUFFER_SIZE 16384
 
-#define _MAT4_INDEX(row, column) ((row) + (column) * 4)
+void get_projection_matrix(int width, int height, GLfloat *projection_matrix);
+void mat4_mult(const GLfloat lhs[16], const GLfloat rhs[16], GLfloat result[16]);
 
 static const GLchar* vertexShaderSource =
     "#version 330 core\n"
@@ -46,46 +47,7 @@ static int prev_size[2];
 
 static int buf_idx, projection_location, texture_location;
 
-static void mat4_mult(const GLfloat lhs[16], const GLfloat rhs[16], GLfloat result[16])
-{
-	int c, r, i;
-
-	for (c = 0; c < 4; c++)
-	{
-		for (r = 0; r < 4; r++)
-		{
-			result[_MAT4_INDEX(r, c)] = 0.0f;
-
-			for (i = 0; i < 4; i++)
-				result[_MAT4_INDEX(r, c)] += lhs[_MAT4_INDEX(r, i)] * rhs[_MAT4_INDEX(i, c)];
-		}
-	}
-}
-
-static void get_projection_matrix(int width, int height)
-{
-	const GLfloat left = 0.0f;
-	const GLfloat right = (GLfloat)width;
-	const GLfloat bottom = (GLfloat)height;
-	const GLfloat top = 0.0f;
-	const GLfloat zNear = -1.0f;
-	const GLfloat zFar = 1.0f;
-
-	const GLfloat projection[16] = {
-		(2.0f / (right - left)), 0.0f, 0.0f, 0.0f,
-		0.0f, (2.0f / (top - bottom)), 0.0f, 0.0f,
-		0.0f, 0.0f, (-2.0f / (zFar - zNear)), 0.0f,
-
-		-((right + left) / (right - left)),
-		-((top + bottom) / (top - bottom)),
-		-((zFar + zNear) / (zFar - zNear)),
-		1.0f,
-	};
-
-	memcpy(projection_matrix, projection, 16 * sizeof(GLfloat));
-}
-
-void gl_init(void) {
+void gl3_init(void) {
   GLint vertexShader = glCreateShader(GL_VERTEX_SHADER);
   glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
   glCompileShader(vertexShader);
@@ -159,7 +121,7 @@ void gl_init(void) {
   glUseProgram(shaderProgram);
 }
 
-void gl_flush(unsigned int* viewport, float scale) {
+void gl3_flush(unsigned int* viewport, float scale) {
   if (buf_idx == 0) { return; }
   
   int width = viewport[2];
@@ -168,7 +130,7 @@ void gl_flush(unsigned int* viewport, float scale) {
   if (width != prev_size[0] || height != prev_size[1]) {
     glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
   
-    get_projection_matrix(viewport[2], viewport[3]);
+    get_projection_matrix(viewport[2], viewport[3], projection_matrix);
 
     const GLfloat model[16] = {
       scale, 0.0f, 0.0f, 0.0f,
@@ -271,7 +233,7 @@ static void push_quad(mu_Rect dst, mu_Rect src, mu_Color color) {
   index_buf[index_idx++] = element_idx + 1;
 }
 
-int gl_get_text_width(const char *text, int len) {
+int gl3_get_text_width(const char *text, int len) {
   int res = 0;
   for (const char *p = text; *p && len--; p++) {
     if ((*p & 0xc0) == 0x80) { continue; }
@@ -281,15 +243,15 @@ int gl_get_text_width(const char *text, int len) {
   return res;
 }
 
-int gl_get_text_height(void) {
+int gl3_get_text_height(void) {
   return 18;
 }
 
-void gl_draw_rect(mu_Rect rect, mu_Color color) {
+void gl3_draw_rect(mu_Rect rect, mu_Color color) {
   push_quad(rect, atlas[ATLAS_WHITE], color);
 }
 
-void gl_draw_text(const char *text, mu_Vec2 pos, mu_Color color) {
+void gl3_draw_text(const char *text, mu_Vec2 pos, mu_Color color) {
   mu_Rect dst = { pos.x, pos.y, 0, 0 };
   for (const char *p = text; *p; p++) {
     if ((*p & 0xc0) == 0x80) { continue; }
