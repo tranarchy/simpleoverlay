@@ -134,7 +134,7 @@ void draw_overlay(const char *interface, unsigned int *viewport) {
     ctx = malloc(sizeof(mu_Context));
     mu_init(ctx);
 
-    int gl_major_version;
+    int gl_major_version = -1;
     glGetIntegerv(GL_MAJOR_VERSION, &gl_major_version);
 
     if (gl_major_version < 3) {
