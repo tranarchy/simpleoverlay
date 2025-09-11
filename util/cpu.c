@@ -32,8 +32,6 @@
     #define CPU_STATES_NUM 4
 #endif
 
-double get_macos_cpu_temp(int page, int usage);
-
 static long long cpu_usage[CPU_STATES_NUM];
 static long long cpu_usage_prev[CPU_STATES_NUM] = { 0 };
 
