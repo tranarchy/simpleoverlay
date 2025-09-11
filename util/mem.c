@@ -73,11 +73,16 @@
           return;
       }
 
-      mib[0] = CTL_VM;
-      mib[1] = VM_METER;
-
       slen = sizeof(vmtotal);
-      ret = sysctl(mib, 2, &vmtotal, &slen, NULL, 0);
+
+      #if defined(__FreeBSD__) || defined(__DragonFly__)
+          ret = sysctlbyname("vm.vmtotal", &vmtotal, &slen, NULL, 0);
+      #else
+          mib[0] = CTL_VM;
+          mib[1] = VM_METER;
+
+          ret = sysctl(mib, 2, &vmtotal, &slen, NULL, 0);
+      #endif
 
       if (ret == -1) {
           return;
