@@ -4,15 +4,13 @@
 <img width=49% src="https://github.com/user-attachments/assets/7f44352e-4a34-4d20-9dd6-d6b5c47f9cbd" />
 </p>
 
-<p align="center">OpenGL performance overlay for Linux and *BSD</p>
+<p align="center">OpenGL performance overlay for Linux, macOS and *BSD</p>
 
 ## About
 
-simpleoverlay is an OpenGL performance overlay for Linux and *BSD written in C
+simpleoverlay is an OpenGL performance overlay for Linux, macOS and *BSD written in C
 
-It supports the GLX and EGL OpenGL interface
-
-CGL (macOS) support is WIP
+It supports the GLX, EGL and CGL OpenGL interface
 
 ## Configuration
 
