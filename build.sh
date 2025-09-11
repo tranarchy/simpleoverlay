@@ -16,7 +16,7 @@ if [ $(uname) != "Darwin" ]; then
 		SRC="$SRC hooks/dlsym.c hooks/egl.c hooks/glx.c hooks/vulkan.c util/elfhacks.c"
 else
 		SRC="$SRC hooks/cgl.c"
-		STDFLAGS="$STDFLAGS -framework Foundation"
+		STDFLAGS="$STDFLAGS -framework Foundation -framework IOKit"
 		OUTPUT="libsimpleoverlay.dylib"
 fi
 

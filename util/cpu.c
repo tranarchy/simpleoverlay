@@ -25,9 +25,14 @@
 #elif defined(__APPLE__)
     #include <mach/mach.h>
 
+    #include <CoreFoundation/CoreFoundation.h>
+    #include <IOKit/hidsystem/IOHIDEventSystemClient.h>
+
     #define CPU_IDLE_STATE 2
     #define CPU_STATES_NUM 4
 #endif
+
+double get_macos_cpu_temp(int page, int usage);
 
 static long long cpu_usage[CPU_STATES_NUM];
 static long long cpu_usage_prev[CPU_STATES_NUM] = { 0 };
@@ -232,6 +237,24 @@ static void get_cpu_usage_percent(s_overlay_info *overlay_info, long long *cpu_u
         overlay_info->cpu_temp = overlay_info->cpu_temp / 10 - 273.15;
     }
 #elif defined(__APPLE__)
+    #define IOHIDEventFieldBase(type)   (type << 16)
+    #define kIOHIDEventTypeTemperature  15
+    #define kIOHIDEventTypePower        25
+
+    #if defined(__LP64__)
+        typedef double IOHIDFloat;
+    #else
+        typedef float IOHIDFloat;
+    #endif
+
+    typedef struct __IOHIDEvent *IOHIDEventRef;
+    typedef struct __IOHIDServiceClient *IOHIDServiceClientRef;
+
+    IOHIDEventSystemClientRef IOHIDEventSystemClientCreate(CFAllocatorRef allocator);
+    int IOHIDEventSystemClientSetMatching(IOHIDEventSystemClientRef client, CFDictionaryRef match);
+    IOHIDEventRef IOHIDServiceClientCopyEvent(IOHIDServiceClientRef, int64_t , int32_t, int64_t);
+    IOHIDFloat IOHIDEventGetFloatValue(IOHIDEventRef event, int32_t field);
+
     static void get_cpu_usage(s_overlay_info *overlay_info) {
         natural_t proc_count;
         mach_msg_type_number_t len = HOST_VM_INFO64_COUNT;
@@ -254,7 +277,48 @@ static void get_cpu_usage_percent(s_overlay_info *overlay_info, long long *cpu_u
     }
 
     static void get_cpu_temp(s_overlay_info *overlay_info) {
-        // todo implement cpu temp for macos
+        CFNumberRef nums[2];
+        CFStringRef keys[2];
+
+        int page = 0xff00;
+        int usage = 5;
+
+        keys[0] = CFStringCreateWithCString(0, "PrimaryUsagePage", 0);
+        keys[1] = CFStringCreateWithCString(0, "PrimaryUsage", 0);
+        nums[0] = CFNumberCreate(0, kCFNumberSInt32Type, &page);
+        nums[1] = CFNumberCreate(0, kCFNumberSInt32Type, &usage);
+
+        CFDictionaryRef sensors = CFDictionaryCreate(0, (const void**)keys, (const void**)nums, 2, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+
+        IOHIDEventSystemClientRef system = IOHIDEventSystemClientCreate(kCFAllocatorDefault);
+        IOHIDEventSystemClientSetMatching(system, sensors);
+        CFArrayRef matchingsrvs = IOHIDEventSystemClientCopyServices(system);
+
+        long count = CFArrayGetCount(matchingsrvs);
+
+        long cpu_count = sysconf(_SC_NPROCESSORS_ONLN);
+
+        double temp_sum = 0;
+
+        for (int i = 0; i < count; i++) {
+
+            if (i >= cpu_count) {
+                break;
+            }
+
+            IOHIDServiceClientRef sc = (IOHIDServiceClientRef)CFArrayGetValueAtIndex(matchingsrvs, i);
+            IOHIDEventRef event = IOHIDServiceClientCopyEvent(sc, kIOHIDEventTypeTemperature, 0, 0); 
+
+            if (event != 0) {
+                double temp = IOHIDEventGetFloatValue(event, IOHIDEventFieldBase(kIOHIDEventTypeTemperature));
+
+                if (temp > 0) {
+                    temp_sum += temp;
+                }
+            }   
+        }
+
+        overlay_info->cpu_temp = temp_sum / cpu_count;
     }
 #endif
 
