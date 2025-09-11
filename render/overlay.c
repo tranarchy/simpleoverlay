@@ -188,7 +188,11 @@ void draw_overlay(const char *interface, unsigned int *viewport) {
       add_text(ctx, &init_rect, interface, " %d FPS (%.1f ms)", overlay_info.fps, overlay_info.frametime); 
       add_text(ctx, &init_rect, "CPU", " %d%% (%d C)", overlay_info.cpu_usage, overlay_info.cpu_temp);
       add_text(ctx, &init_rect, "GPU", " %d%% (%d C)", overlay_info.gpu_usage, overlay_info.gpu_temp);
-      add_text(ctx, &init_rect, "VRAM", " %.2f GiB", overlay_info.gpu_mem);
+
+      #ifndef __APPLE__
+        add_text(ctx, &init_rect, "VRAM", " %.2f GiB", overlay_info.gpu_mem);
+      #endif
+      
       add_text(ctx, &init_rect, "RAM", " %.2f GiB", overlay_info.mem);
     }
 
