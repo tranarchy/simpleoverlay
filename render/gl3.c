@@ -1,6 +1,7 @@
 #include <string.h>
 
 #include "../include/glad.h"
+#include "../include/common.h"
 #include "../include/microui.h"
 
 #include "atlas.h"
@@ -9,6 +10,8 @@
 
 void get_projection_matrix(int width, int height, GLfloat *projection_matrix);
 void mat4_mult(const GLfloat lhs[16], const GLfloat rhs[16], GLfloat result[16]);
+
+extern s_config config;
 
 static const GLchar* vertexShaderSource =
     "#version 330 core\n"
@@ -42,8 +45,6 @@ static GLfloat projection_matrix[16];
 
 static GLint shaderProgram;
 static GLuint ebo, vao, vbo, id;
-
-static int prev_size[2];
 
 static int buf_idx, projection_location, texture_location;
 
@@ -121,33 +122,41 @@ void gl3_init(void) {
   glUseProgram(shaderProgram);
 }
 
-void gl3_flush(unsigned int* viewport, float scale) {
+void gl3_flush(mu_Rect rect, unsigned int* viewport) {
   if (buf_idx == 0) { return; }
+
+  GLfloat x, y;
   
   int width = viewport[2];
   int height = viewport[3];
 
-  if (width != prev_size[0] || height != prev_size[1]) {
-    glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+  glViewport(viewport[0], viewport[1], width, height);
   
-    get_projection_matrix(viewport[2], viewport[3], projection_matrix);
+  get_projection_matrix(width, height, projection_matrix);
 
-    const GLfloat model[16] = {
-      scale, 0.0f, 0.0f, 0.0f,
-      0.0f, scale, 0.0f, 0.0f,
-      0.0f, 0.0f,  scale, 0.0f,
-      0, 0, 0.0f, 1.0f,
-    };
-
-    GLfloat mvp[16];
-    mat4_mult(projection_matrix, model, mvp);
-
-    glUniformMatrix4fv(projection_location, 1, GL_FALSE, mvp);
-
+  switch (config.pos_x) {
+      case LEFT_X: x = 5; break;
+      case RIGHT_X: x = width - ((rect.w + 5) * config.scale); break;
+      case CENTER_X: x = (width / 2) - ((rect.w * config.scale) / 2); break; 
   }
 
-  prev_size[0] = width;
-  prev_size[1] = height;
+  switch (config.pos_y) {
+      case TOP_Y: y = 5; break;
+      case BOTTOM_Y: y = height - ((rect.h + 5) * config.scale); break;
+      case CENTER_Y: y = (height / 2) - ((rect.h * config.scale) / 2); break; 
+  }
+
+  const GLfloat model[16] = {
+    config.scale, 0.0f, 0.0f, 0.0f,
+    0.0f, config.scale, 0.0f, 0.0f,
+    0.0f, 0.0f,  config.scale, 0.0f,
+    x, y, 0.0f, 1.0f,
+  };
+
+  GLfloat mvp[16];
+  mat4_mult(projection_matrix, model, mvp);
+
+  glUniformMatrix4fv(projection_location, 1, GL_FALSE, mvp);
 
   glBindVertexArray(vao);
   

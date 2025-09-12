@@ -1,11 +1,14 @@
 #include <string.h>
 
 #include "../include/glad.h"
+#include "../include/common.h"
 #include "../include/microui.h"
 
 #include "atlas.h"
 
 #define BUFFER_SIZE 16384
+
+extern s_config config;
 
 static GLfloat   tex_buf[BUFFER_SIZE *  8];
 static GLfloat  vert_buf[BUFFER_SIZE *  8];
@@ -44,19 +47,37 @@ void gl1_init(void) {
 }
 
 
-void gl1_flush(unsigned int *viewport, float scale) {
+void gl1_flush(mu_Rect rect, unsigned int *viewport) {
   if (buf_idx == 0) { return; }
-  
-  glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+
+  GLfloat x, y;
+
+  int width = viewport[2];
+  int height = viewport[3];
+
+  glViewport(viewport[0], viewport[1], width, height);
   glMatrixMode(GL_PROJECTION);
   glPushMatrix();
   glLoadIdentity();
-  glOrtho(0.0f, viewport[2], viewport[3], 0.0f, -1.0f, +1.0f);
+  glOrtho(0.0f, width, height, 0.0f, -1.0f, +1.0f);
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
   glLoadIdentity();
 
-  glScalef(scale, scale, 1.0f);
+  switch (config.pos_x) {
+        case LEFT_X: x = 5; break;
+        case RIGHT_X: x = width - ((rect.w + 5) * config.scale); break;
+        case CENTER_X: x = (width / 2) - ((rect.w * config.scale) / 2); break; 
+  }
+
+  switch (config.pos_y) {
+        case TOP_Y: y = 5; break;
+        case BOTTOM_Y: y = height - ((rect.h + 5) * config.scale); break;
+        case CENTER_Y: y = (height / 2) - ((rect.h * config.scale) / 2); break; 
+  }
+
+  glTranslatef(x, y, 1.0f);
+  glScalef(config.scale, config.scale, 1.0f);
 
   glTexCoordPointer(2, GL_FLOAT, 0, tex_buf);
   glVertexPointer(2, GL_FLOAT, 0, vert_buf);

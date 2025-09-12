@@ -1,9 +1,16 @@
 #!/bin/sh
 
 export SCALE=1.8
+
+# HORIZONTAL -> 0 LEFT, 1 RIGHT, 2 CENTER
+# VERTICAL -> 0 TOP, 1 BOTTOM, 2 CENTER
+export HORIZONTAL_POS=1
+export VERTICAL_POS=0
+
 export BG_COLOR=10101A96
 export KEY_COLOR=9889FAFF
 export VALUE_COLOR=FFFFFFFF
+
 export FPS_ONLY=0
 
 if [ $(uname) != "Darwin" ]; then

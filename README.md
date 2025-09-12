@@ -17,6 +17,8 @@ It supports the GLX, EGL and CGL OpenGL interface
 simpleoverlay can be configured with the following environment variables
 
 - SCALE
+- HORIZONTAL_POS
+- VERTICAL_POS
 - BG_COLOR
 - KEY_COLOR
 - VALUE_COLOR

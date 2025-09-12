@@ -12,14 +12,14 @@
 #include "../include/microui.h"
 
 typedef void (*PFNGLINIT)(void);
-typedef void (*PFNGLFLUSH)(unsigned int* viewport, float scale);
+typedef void (*PFNGLFLUSH)(mu_Rect rect, unsigned int* viewport);
 typedef void (*PFNGLDRAWRECT)(mu_Rect rect, mu_Color color);
 typedef void (*PFNGLDRAWTEXT)(const char *text, mu_Vec2 pos, mu_Color color);
 typedef int (*PFNGLGETTEXTHEIGHT)(void);
 typedef int (*PFNGLGETTEXTWIDTH)(const char *text, int len);
 
 void gl1_init(void);
-void gl1_flush(unsigned int* viewport, float scale);
+void gl1_flush(mu_Rect rect, unsigned int* viewport);
 void gl1_draw_rect(mu_Rect rect, mu_Color color);
 void gl1_draw_text(const char *text, mu_Vec2 pos, mu_Color color);
 
@@ -27,7 +27,7 @@ int gl1_get_text_height(void);
 int gl1_get_text_width(const char *text, int len);
 
 void gl3_init(void);
-void gl3_flush(unsigned int* viewport, float scale);
+void gl3_flush(mu_Rect rect, unsigned int* viewport);
 void gl3_draw_rect(mu_Rect rect, mu_Color color);
 void gl3_draw_text(const char *text, mu_Vec2 pos, mu_Color color);
 
@@ -174,11 +174,12 @@ void draw_overlay(const char *interface, unsigned int *viewport) {
   }
 
   mu_begin(ctx);
-
-  mu_Rect init_rect = mu_rect(5, 5, 0, 0);
+  
+  mu_Container *win;
+  mu_Rect init_rect = mu_rect(0, 0, 0, 0);
 
   if (mu_begin_window_ex(ctx, "", init_rect, opt)) {
-    mu_Container *win = mu_get_container(ctx, "");
+    win = mu_get_container(ctx, "");
     win->rect.h = 0;
 
     mu_layout_row(ctx, 2, (int[]) { 50, -1 }, 0);
@@ -211,5 +212,5 @@ void draw_overlay(const char *interface, unsigned int *viewport) {
     }
   }
 
-  gl_flush_ptr(viewport, config.scale);
+  gl_flush_ptr(win->rect, viewport);
 }
