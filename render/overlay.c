@@ -144,7 +144,8 @@ static void add_text(mu_Context *ctx, mu_Rect *init_rect, const char *key, const
 }
 
 void cleanup(void) {
-    // to do
+    free(ctx);
+    ctx = NULL;
 }
 
 void draw_overlay(const char *interface, unsigned int *viewport) {
