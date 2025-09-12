@@ -21,9 +21,18 @@ else
 fi
 
 if [ "$TARGET" = "" ]; then
-		set -x
-		
-		cc $SRC $STDFLAGS -o $OUTPUT
+		if [ $(uname) != "Darwin" ]; then
+			set -x
+
+			cc $SRC $STDFLAGS -o $OUTPUT
+		else
+			set -x
+
+			cc $SRC $STDFLAGS -arch x86_64 -o amd64.dylib
+			cc $SRC $STDFLAGS -arch arm64 -o arm64.dylib
+			lipo -create -output $OUTPUT amd64.dylib arm64.dylib
+			rm amd64.dylib arm64.dylib
+		fi
 elif [ "$TARGET" = "multilib" ]; then
 		set -x
 		
