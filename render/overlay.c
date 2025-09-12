@@ -115,7 +115,14 @@ static void add_text(mu_Context *ctx, mu_Rect *init_rect, const char *key, const
     mu_text(ctx, value_buffer);
 
     mu_Container *win = mu_get_container(ctx, "");
-    mu_Rect new_rect = mu_rect(5, 5, text_width(NULL, key, -1) + text_width(NULL, value_buffer, -1) + 35, 0);
+    mu_Rect new_rect;
+    
+    if (!config.fps_only) {
+      new_rect = mu_rect(5, 5, text_width(NULL, key, -1) + text_width(NULL, value_buffer, -1) + 35, 0);
+    } else {
+      new_rect = mu_rect(5, 5, text_width(NULL, value_buffer, -1) + 5, 0);
+    }
+    
       
     if ((*init_rect).w < new_rect.w) {
       (*init_rect).w = new_rect.w;
