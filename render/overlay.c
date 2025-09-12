@@ -36,7 +36,12 @@ int gl3_get_text_width(const char *text, int len);
 
 void populate_mem(s_overlay_info *overlay_info);
 void populate_cpu(s_overlay_info *s_overlay_info);
-void populate_amdgpu(s_overlay_info *overlay_info);
+
+#ifndef __APPLE__
+  void populate_amdgpu(s_overlay_info *overlay_info);
+#else
+  void populate_applegpu(s_overlay_info *overlay_info);
+#endif
 
 static PFNGLINIT gl_init_ptr = NULL;
 static PFNGLFLUSH gl_flush_ptr = NULL;
@@ -76,10 +81,16 @@ static void populate_overlay_info(void) {
       if (!config.fps_only) {
         populate_cpu(&overlay_info);
         populate_mem(&overlay_info);
-
-        if (strcmp(vendor, "AMD") == 0) {
-           populate_amdgpu(&overlay_info);
-        }
+        
+        #ifndef __APPLE__
+          if (strcmp(vendor, "AMD") == 0) {
+            populate_amdgpu(&overlay_info);
+          }
+        #else
+          if (strcmp(vendor, "Apple") == 0) {
+            populate_applegpu(&overlay_info);
+          }
+        #endif
       }
 
       frames = 0;
@@ -196,11 +207,7 @@ void draw_overlay(const char *interface, unsigned int *viewport) {
       add_text(ctx, &init_rect, interface, " %d FPS (%.1f ms)", overlay_info.fps, overlay_info.frametime); 
       add_text(ctx, &init_rect, "CPU", " %d%% (%d C)", overlay_info.cpu_usage, overlay_info.cpu_temp);
       add_text(ctx, &init_rect, "GPU", " %d%% (%d C)", overlay_info.gpu_usage, overlay_info.gpu_temp);
-
-      #ifndef __APPLE__
-        add_text(ctx, &init_rect, "VRAM", " %.2f GiB", overlay_info.gpu_mem);
-      #endif
-      
+      add_text(ctx, &init_rect, "VRAM", " %.2f GiB", overlay_info.gpu_mem);
       add_text(ctx, &init_rect, "RAM", " %.2f GiB", overlay_info.mem);
     }
 

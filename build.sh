@@ -2,7 +2,7 @@
 
 set -e
 
-SRC="main.c microui.c glad.c render/gl1.c render/gl3.c render/math.c render/overlay.c util/amdgpu.c util/cpu.c util/mem.c"
+SRC="main.c microui.c glad.c render/gl1.c render/gl3.c render/math.c render/overlay.c util/cpu.c util/mem.c"
 STDFLAGS="-std=c99 -shared -fPIC -Wall"
 
 OUTPUT="libsimpleoverlay.so"
@@ -13,9 +13,9 @@ WRAPPER="simpleoverlay"
 TARGET="$1"
 
 if [ $(uname) != "Darwin" ]; then
-		SRC="$SRC hooks/dlsym.c hooks/egl.c hooks/glx.c hooks/vulkan.c util/elfhacks.c"
+		SRC="$SRC hooks/dlsym.c hooks/egl.c hooks/glx.c hooks/vulkan.c util/elfhacks.c util/amdgpu.c"
 else
-		SRC="$SRC hooks/cgl.c"
+		SRC="$SRC hooks/cgl.c util/applegpu.c"
 		STDFLAGS="$STDFLAGS -framework Foundation -framework IOKit"
 		OUTPUT="libsimpleoverlay.dylib"
 fi
