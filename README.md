@@ -6,11 +6,11 @@
 
 <p align="center">OpenGL performance overlay for Linux, macOS and *BSD</p>
 
-## About
+## Key features
 
-simpleoverlay is an OpenGL performance overlay for Linux, macOS and *BSD written in C
-
-It supports the GLX, EGL and CGL OpenGL interface
+- only build-time dependency is a C99 compliant compiler
+- supports legacy OpenGL (1.1), making it compatible with a wide variety of old GPUs
+- made with cross-platform support in mind, currently works on 6 different operating systems
 
 ## Configuration
 
@@ -25,9 +25,6 @@ simpleoverlay can be configured with the following environment variables
 - FPS_ONLY
 
 You can modify them in the `simpleoverlay` wrapper file
-
-## Build-time dependencies
-- C99 compliant compiler
 
 ## Installing
 
@@ -76,6 +73,4 @@ service kld restart
 <br>
 
 > [!NOTE]
-> Currently GPU information is limited to AMD GPUs
->
-> Other parts of the overlay will still work fine for non AMD GPU users
+> Currently GPU information is limited to AMD and Apple GPUs
