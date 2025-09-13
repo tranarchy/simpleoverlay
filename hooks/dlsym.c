@@ -27,7 +27,7 @@ void *dlsym(void *handle, const char *symbol) {
     if (!dlsym_ptr) {
         #if defined(__FreeBSD__) || defined(__DragonFly__)
             dlsym_ptr = (PFNDLSYM)&dlfunc;
-        #elif defined(__NetBSD__) || defined(__OpenBSD__)
+        #elif defined(__NetBSD__)
             dlsym_ptr = (PFNDLSYM)dlvsym(RTLD_NEXT, "dlsym", "");
         #else
             eh_obj_t libc;
