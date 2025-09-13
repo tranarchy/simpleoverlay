@@ -7,9 +7,9 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
-#include "../include/glad.h"
-#include "../include/common.h"
-#include "../include/microui.h"
+#include <glad.h>
+#include <common.h>
+#include <microui.h>
 
 typedef void (*PFNGLINIT)(void);
 typedef void (*PFNGLFLUSH)(mu_Rect rect, unsigned int* viewport);

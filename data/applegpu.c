@@ -1,7 +1,7 @@
 #include <IOKit/IOKitLib.h>
 #include <CoreFoundation/CoreFoundation.h>
 
-#include "../include/common.h"
+#include <common.h>
 
 static void get_perf_stat(CFMutableDictionaryRef *perf_stat) {
     CFMutableDictionaryRef io_dict = IOServiceMatching("IOAccelerator");

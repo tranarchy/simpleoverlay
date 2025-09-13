@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-#include "../include/glad.h"
+#include <glad.h>
 
 void cleanup(void);
 void draw_overlay(const char *interface, unsigned int *viewport);

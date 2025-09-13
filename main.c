@@ -1,6 +1,6 @@
 #include <stdlib.h>
 
-#include "include/common.h"
+#include <common.h>
 
 #if defined(__APPLE__)
   void hook_cgl(void);

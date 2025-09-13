@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#include "../include/common.h"
+#include <common.h>
 
 #if defined(__linux__)
     #include <dirent.h>

@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-#include "../include/elfhacks.h"
+#include <elfhacks.h>
 
 unsigned int eglSwapBuffers(void *display, void *surf);
 unsigned int eglTerminate(void *display);

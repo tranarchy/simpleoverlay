@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "../include/common.h"
+#include <common.h>
 
 #if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
   #include <unistd.h>

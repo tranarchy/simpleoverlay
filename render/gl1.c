@@ -1,8 +1,8 @@
 #include <string.h>
 
-#include "../include/glad.h"
-#include "../include/common.h"
-#include "../include/microui.h"
+#include <glad.h>
+#include <common.h>
+#include <microui.h>
 
 #include "atlas.h"
 

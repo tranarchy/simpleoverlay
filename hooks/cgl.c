@@ -2,7 +2,7 @@
 
 #include <objc/runtime.h>
 
-#include "../include/glad.h"
+#include <glad.h>
 
 void draw_overlay(const char *interface, unsigned int *viewport);
 
