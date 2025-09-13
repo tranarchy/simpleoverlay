@@ -13,7 +13,7 @@ SRC_HOOKS="src/hooks/dlsym.c src/hooks/glx.c src/hooks/egl.c"
 SRC_HOOKS_DARWIN="src/hooks/cgl.c"
 
 SRC="src/main.c $SRC_RENDER $SRC_UTIL $SRC_DATA"
-STDFLAGS="-Isrc/include -std=c99 -shared -fPIC -Wall"
+STDFLAGS="-Iinclude -std=c99 -shared -fPIC -Wall"
 
 OUTPUT="libsimpleoverlay.so"
 OUTPUT_32="libsimpleoverlay32.so"
