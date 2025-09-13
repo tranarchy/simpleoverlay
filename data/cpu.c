@@ -37,7 +37,7 @@
     #define CPU_STATES_NUM 4
 #endif
 
-static long long cpu_usage[CPU_STATES_NUM] = { 0 };
+static long long cpu_usage[CPU_STATES_NUM];
 static long long cpu_usage_prev[CPU_STATES_NUM] = { 0 };
 
 static void get_cpu_usage_percent(s_overlay_info *overlay_info, long long *cpu_usage, long long *cpu_usage_prev) {
@@ -331,6 +331,10 @@ static void get_cpu_usage_percent(s_overlay_info *overlay_info, long long *cpu_u
         kstat_ctl = kstat_open();
 
         int cpu_count = sysconf(_SC_NPROCESSORS_ONLN);
+
+        for (int i = 0; i < CPU_STATES_NUM; i++) {
+            cpu_usage[i] = 0;
+        }
 
         for (int i = 0; i < cpu_count; i++) {
             int j = 0;
