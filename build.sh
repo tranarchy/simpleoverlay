@@ -2,7 +2,7 @@
 
 set -e
 
-SRC="main.c microui.c glad.c render/gl1.c render/gl3.c render/math.c render/overlay.c util/cpu.c util/mem.c"
+SRC="main.c microui.c glad.c render/gl1.c render/gl3.c render/math.c render/overlay.c data/cpu.c data/mem.c"
 STDFLAGS="-std=c99 -shared -fPIC -Wall"
 
 OUTPUT="libsimpleoverlay.so"
@@ -15,11 +15,15 @@ OS=$(uname)
 TARGET="$1"
 
 if [ $OS != "Darwin" ]; then
-		SRC="$SRC hooks/dlsym.c hooks/egl.c hooks/glx.c hooks/vulkan.c util/elfhacks.c util/amdgpu.c"
+		SRC="$SRC hooks/dlsym.c hooks/egl.c hooks/glx.c hooks/vulkan.c util/elfhacks.c data/amdgpu.c"
 else
-		SRC="$SRC hooks/cgl.c util/applegpu.c"
+		SRC="$SRC hooks/cgl.c data/applegpu.c"
 		STDFLAGS="$STDFLAGS -framework Foundation -framework IOKit"
 		OUTPUT="libsimpleoverlay.dylib"
+fi
+
+if [ $OS = "SunOS" ]; then
+		STDFLAGS="$STDFLAGS -lkstat"
 fi
 
 if [ ! -e "$(which cc)" ]; then

@@ -16,6 +16,8 @@
 #elif defined(__APPLE__)
     #include <unistd.h>
     #include <mach/mach.h>
+#elif defined(__illumos__)
+    #include <unistd.h>
 #endif
 
 #if defined(__linux__)
@@ -125,6 +127,15 @@
               vm_stats.compressor_page_count - vm_stats.purgeable_count - vm_stats.external_page_count) * pagesize;
 
       overlay_info->mem = used / (1024.0 * 1024.0 * 1024.0);
+  }
+#elif defined(__illumos__)
+  static void get_mem_usage(s_overlay_info *overlay_info) {
+      long long pagesize = sysconf(_SC_PAGESIZE);
+    
+      long long total = sysconf(_SC_PHYS_PAGES) * pagesize;
+      long long available = sysconf(_SC_AVPHYS_PAGES) * pagesize;
+
+      overlay_info->mem = (total - available) / (1024.0 * 1024.0 * 1024.0);
   }
 #endif
 

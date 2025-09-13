@@ -13,15 +13,15 @@ void glXDestroyContext(void *dpy, void *ctx);
 void *glXGetProcAddress(const unsigned char *procName);
 void *glXGetProcAddressARB(const unsigned char *procName);
 
-void *vkQueuePresentKHR(void *queue, void* pPresentInfo);
-void *vkGetInstanceProcAddr(void *instance, const char* pName);
-void *vkGetDeviceProcAddr(void *device, const char* pName);
-
 typedef void *(*PFNDLSYM)(void *handle, const char *symbol);
 
 PFNDLSYM dlsym_ptr = NULL;
 
 static bool angle = false;
+
+#if defined(__illumos__)
+    extern void *_dlsym(void *handle, const char *symbol);
+#endif
 
 void *dlsym(void *handle, const char *symbol) {
     if (!dlsym_ptr) {
@@ -29,6 +29,8 @@ void *dlsym(void *handle, const char *symbol) {
             dlsym_ptr = (PFNDLSYM)&dlfunc;
         #elif defined(__NetBSD__)
             dlsym_ptr = (PFNDLSYM)dlvsym(RTLD_NEXT, "dlsym", "");
+        #elif defined(__illumos__)
+            dlsym_ptr = (PFNDLSYM)&_dlsym;
         #else
             eh_obj_t libc;
             eh_find_obj(&libc, "*libc.so*");

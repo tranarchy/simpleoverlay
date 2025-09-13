@@ -30,6 +30,11 @@
 
     #define CPU_IDLE_STATE 2
     #define CPU_STATES_NUM 4
+#elif defined(__illumos__)
+    #include <kstat.h>
+
+    #define CPU_IDLE_STATE 0
+    #define CPU_STATES_NUM 4
 #endif
 
 static long long cpu_usage[CPU_STATES_NUM];
@@ -294,7 +299,7 @@ static void get_cpu_usage_percent(s_overlay_info *overlay_info, long long *cpu_u
 
         long count = CFArrayGetCount(matchingsrvs);
 
-        long cpu_count = sysconf(_SC_NPROCESSORS_ONLN);
+        int cpu_count = sysconf(_SC_NPROCESSORS_ONLN);
 
         double temp_sum = 0;
 
@@ -317,6 +322,64 @@ static void get_cpu_usage_percent(s_overlay_info *overlay_info, long long *cpu_u
         }
 
         overlay_info->cpu_temp = temp_sum / cpu_count;
+    }
+#elif defined(__illumos__)
+    static void get_cpu_usage(s_overlay_info *overlay_info) {
+        kstat_ctl_t *kstat_ctl;
+        kstat_t *kstat;
+
+        kstat_ctl = kstat_open();
+
+        int cpu_count = sysconf(_SC_NPROCESSORS_ONLN);
+
+        for (int i = 0; i < cpu_count; i++) {
+            int j = 0;
+            
+            kstat = kstat_lookup(kstat_ctl, "cpu", i, "sys");
+            kstat_read(kstat_ctl, kstat, NULL);
+            kstat_named_t *idle = kstat_data_lookup(kstat, "cpu_nsec_idle");
+            kstat_named_t *intr = kstat_data_lookup(kstat, "cpu_nsec_intr");
+            kstat_named_t *kernel = kstat_data_lookup(kstat, "cpu_nsec_kernel");
+            kstat_named_t *user = kstat_data_lookup(kstat, "cpu_nsec_user");
+           
+            
+            cpu_usage[j++] = idle->value.ui64;
+            cpu_usage[j++] = intr->value.ui64;
+            cpu_usage[j++] = kernel->value.ui64;
+            cpu_usage[j++] = user->value.ui64;
+        }
+
+        kstat_close(kstat_ctl);
+
+        get_cpu_usage_percent(overlay_info, cpu_usage, cpu_usage_prev);
+     }
+
+    static void get_cpu_temp(s_overlay_info *overlay_info) {
+        kstat_ctl_t *kstat_ctl;
+         
+        const char *temp_modules[] = { "temperature", "cpu_temp", "acpi_thermal" };
+
+        kstat_ctl = kstat_open();
+         
+        for (size_t i = 0; i < sizeof(temp_modules) / sizeof(temp_modules[0]); i++) {
+             kstat_t *kstat = kstat_lookup(kstat_ctl, temp_modules[i], -1, NULL);
+             
+             if (!kstat) {
+                continue;
+             }
+
+             if (kstat_read(kstat_ctl, kstat, NULL) < 0) {
+                continue;
+             }
+             
+             kstat_named_t *temp = kstat_data_lookup(kstat, "temperature");
+             if (temp) {
+                overlay_info->cpu_temp = temp->value.i32;
+                break;
+             }
+        }
+
+        kstat_close(kstat_ctl);
     }
 #endif
 

@@ -4,13 +4,13 @@
 <img width=49% src="https://github.com/user-attachments/assets/7f44352e-4a34-4d20-9dd6-d6b5c47f9cbd" />
 </p>
 
-<p align="center">OpenGL performance overlay for Linux, macOS and *BSD</p>
+<p align="center">OpenGL performance overlay for Linux, macOS, *BSD and Illumos</p>
 
 ## Key features
 
 - only build-time dependency is a C99 compliant compiler
 - supports legacy OpenGL (1.1), making it compatible with a wide variety of old GPUs
-- made with cross-platform support in mind, currently works on 6 different operating systems
+- made with cross-platform support in mind, currently works on 7 different operating systems
 
 ## Configuration
 
