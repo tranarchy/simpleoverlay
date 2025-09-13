@@ -14,10 +14,10 @@ void mat4_mult(const GLfloat lhs[16], const GLfloat rhs[16], GLfloat result[16])
 extern s_config config;
 
 static const GLchar* vertexShaderSource =
-    "#version 330 core\n"
-    "layout (location = 0) in vec2 position;\n"
-    "layout (location = 1) in vec4 color;\n"
-    "layout (location = 2) in vec2 texCoord;\n"
+    "#version 130\n"
+    "in vec2 position;\n"
+    "in vec4 color;\n"
+    "in vec2 texCoord;\n"
     "out vec4 ourColor;\n"
     "out vec2 ourTexCoord;\n"
     "uniform mat4 projection;\n"
@@ -28,14 +28,14 @@ static const GLchar* vertexShaderSource =
     "}\n";
 
 static const GLchar* fragmentShaderSource =
-    "#version 330 core\n"
+    "#version 130\n"
     "out vec4 FragColor;\n"
     "in vec2 ourTexCoord;\n"
     "in vec4 ourColor;\n"
     "uniform sampler2D ourTexture;\n"
     "void main() {\n"
     "   vec4 texColor = texture(ourTexture, ourTexCoord);\n"
-    "   FragColor = vec4(ourColor.rgb, ourColor.a * texColor.r);\n"
+    "   FragColor = ourColor * texColor;\n"
     "}\n";
 
 static GLfloat vertices[BUFFER_SIZE * 32];
@@ -76,6 +76,10 @@ void gl3_init(void) {
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(index_buf), index_buf, GL_DYNAMIC_DRAW);
 
+  glBindAttribLocation(shaderProgram, 0, "position");
+  glBindAttribLocation(shaderProgram, 1, "color");
+  glBindAttribLocation(shaderProgram, 2, "texCoord");
+
   // pos
   glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
   glEnableVertexAttribArray(0);
@@ -90,20 +94,32 @@ void gl3_init(void) {
 
   glBindVertexArray(0);
 
-  for(int i=0; i<128; i++) {
-    for(int j=0; j<128; j++) {
+  GLubyte rgba_texture[ATLAS_WIDTH * ATLAS_HEIGHT * 4];
+
+  for(int i = 0; i < ATLAS_HEIGHT; i++) {
+    for(int j = 0; j < ATLAS_WIDTH; j++) {
       if(atlas_texture[i][j]==' ') {
         atlas_texture[i][j] = 0;
       } else {
         atlas_texture[i][j] = -1;
       }
+
+      int rgba_index = (i * ATLAS_WIDTH + j) * 4;
+
+      GLubyte atlas_cur = atlas_texture[i][j];
+
+      rgba_texture[rgba_index++] = atlas_cur;
+      rgba_texture[rgba_index++] = atlas_cur;
+      rgba_texture[rgba_index++] = atlas_cur;
+      rgba_texture[rgba_index++] = atlas_cur;
+      
     }
   }
 
   glGenTextures(1, &id);
   glBindTexture(GL_TEXTURE_2D, id);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, ATLAS_WIDTH, ATLAS_HEIGHT, 0,
-    GL_RED, GL_UNSIGNED_BYTE, atlas_texture);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ATLAS_WIDTH, ATLAS_HEIGHT, 0,
+    GL_RGBA, GL_UNSIGNED_BYTE, rgba_texture);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
