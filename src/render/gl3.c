@@ -13,7 +13,32 @@ void mat4_mult(const GLfloat lhs[16], const GLfloat rhs[16], GLfloat result[16])
 
 extern s_config config;
 
-static const GLchar* vertexShaderSource =
+static const GLchar* vertex_shader_source_330 =
+    "#version 330 core\n"
+    "layout (location = 0) in vec2 position;\n"
+    "layout (location = 1) in vec4 color;\n"
+    "layout (location = 2) in vec2 texCoord;\n"
+    "out vec4 ourColor;\n"
+    "out vec2 ourTexCoord;\n"
+    "uniform mat4 projection;\n"
+    "void main() {\n"
+    "    gl_Position = projection * vec4(position, 0.0f, 1.0f);\n"
+    "    ourColor = color;\n"
+    "    ourTexCoord = texCoord;\n"
+    "}\n";
+
+static const GLchar* fragment_shader_source_330 =
+    "#version 330 core\n"
+    "out vec4 FragColor;\n"
+    "in vec2 ourTexCoord;\n"
+    "in vec4 ourColor;\n"
+    "uniform sampler2D ourTexture;\n"
+    "void main() {\n"
+    "   vec4 texColor = texture(ourTexture, ourTexCoord);\n"
+    "   FragColor = ourColor * texColor;\n"
+    "}\n";
+
+static const GLchar* vertex_shader_source_130 =
     "#version 130\n"
     "in vec2 position;\n"
     "in vec4 color;\n"
@@ -27,7 +52,7 @@ static const GLchar* vertexShaderSource =
     "    ourTexCoord = texCoord;\n"
     "}\n";
 
-static const GLchar* fragmentShaderSource =
+static const GLchar* fragment_shader_source_130 =
     "#version 130\n"
     "out vec4 FragColor;\n"
     "in vec2 ourTexCoord;\n"
@@ -43,27 +68,43 @@ static GLuint  index_buf[BUFFER_SIZE * 6];
 
 static GLfloat projection_matrix[16];
 
-static GLint shaderProgram;
+static GLint shader_program;
 static GLuint ebo, vao, vbo, id;
 
 static int buf_idx, projection_location, texture_location;
 
 void gl3_init(void) {
-  GLint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-  glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-  glCompileShader(vertexShader);
+  int gl_minor_version, gl_major_version;
+
+  const void *fragment_shader_source;
+  const void *vertex_shader_source;
+
+  glGetIntegerv(GL_MAJOR_VERSION, &gl_major_version);
+  glGetIntegerv(GL_MINOR_VERSION, &gl_minor_version);
+
+  if (gl_major_version > 3 || gl_minor_version == 3) {
+      vertex_shader_source = &vertex_shader_source_330;
+      fragment_shader_source = &fragment_shader_source_330;
+  } else {
+      vertex_shader_source = &vertex_shader_source_130;
+      fragment_shader_source = &fragment_shader_source_130;
+  }
+
+  GLint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+  glShaderSource(vertex_shader, 1, vertex_shader_source, NULL);
+  glCompileShader(vertex_shader);
   
-  GLint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-  glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-  glCompileShader(fragmentShader);
+  GLint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+  glShaderSource(fragment_shader, 1, fragment_shader_source, NULL);
+  glCompileShader(fragment_shader);
  
-  shaderProgram = glCreateProgram();
-  glAttachShader(shaderProgram, vertexShader);
-  glAttachShader(shaderProgram, fragmentShader);
-  glLinkProgram(shaderProgram);
+  shader_program = glCreateProgram();
+  glAttachShader(shader_program, vertex_shader);
+  glAttachShader(shader_program, fragment_shader);
+  glLinkProgram(shader_program);
  
-  glDeleteShader(vertexShader);
-  glDeleteShader(fragmentShader);
+  glDeleteShader(vertex_shader);
+  glDeleteShader(fragment_shader);
 
   glGenVertexArrays(1, &vao);
   glGenBuffers(1, &vbo);
@@ -76,9 +117,9 @@ void gl3_init(void) {
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(index_buf), index_buf, GL_DYNAMIC_DRAW);
 
-  glBindAttribLocation(shaderProgram, 0, "position");
-  glBindAttribLocation(shaderProgram, 1, "color");
-  glBindAttribLocation(shaderProgram, 2, "texCoord");
+  glBindAttribLocation(shader_program, 0, "position");
+  glBindAttribLocation(shader_program, 1, "color");
+  glBindAttribLocation(shader_program, 2, "texCoord");
 
   // pos
   glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
@@ -127,15 +168,15 @@ void gl3_init(void) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-  projection_location = glGetUniformLocation(shaderProgram, "projection");
-  texture_location = glGetUniformLocation(shaderProgram, "ourTexture");
+  projection_location = glGetUniformLocation(shader_program, "projection");
+  texture_location = glGetUniformLocation(shader_program, "ourTexture");
    
   glUniform1i(texture_location, 0);
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-  glUseProgram(shaderProgram);
+  glUseProgram(shader_program);
 }
 
 void gl3_flush(mu_Rect rect, unsigned int* viewport) {
