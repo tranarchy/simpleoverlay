@@ -10,9 +10,11 @@ OUTPUT_32="libsimpleoverlay32.so"
 
 WRAPPER="simpleoverlay"
 
+CC="cc"
+OS=$(uname)
 TARGET="$1"
 
-if [ $(uname) != "Darwin" ]; then
+if [ $OS != "Darwin" ]; then
 		SRC="$SRC hooks/dlsym.c hooks/egl.c hooks/glx.c hooks/vulkan.c util/elfhacks.c util/amdgpu.c"
 else
 		SRC="$SRC hooks/cgl.c util/applegpu.c"
@@ -20,23 +22,34 @@ else
 		OUTPUT="libsimpleoverlay.dylib"
 fi
 
+if [ ! -e "$(which cc)" ]; then
+		if [ -e "$(which gcc)" ]; then
+				CC="gcc"
+		elif [ -e "$(which clang)" ]; then
+				CC="clang"
+		else
+				echo "No C compiler found!"
+				exit
+		fi
+fi
+
 if [ "$TARGET" = "" ]; then
-		if [ $(uname) != "Darwin" ]; then
+		if [ $OS != "Darwin" ]; then
 			set -x
 
-			cc $SRC $STDFLAGS -o $OUTPUT
+			$CC $SRC $STDFLAGS -o $OUTPUT
 		else
 			set -x
 
-			cc $SRC $STDFLAGS -arch x86_64 -o amd64.dylib
-			cc $SRC $STDFLAGS -arch arm64 -o arm64.dylib
+			$CC $SRC $STDFLAGS -arch x86_64 -o amd64.dylib
+			$CC $SRC $STDFLAGS -arch arm64 -o arm64.dylib
 			lipo -create -output $OUTPUT amd64.dylib arm64.dylib
 			rm amd64.dylib arm64.dylib
 		fi
 elif [ "$TARGET" = "multilib" ]; then
 		set -x
 		
-		cc $SRC -m32 $STDFLAGS -o $OUTPUT_32
+		$CC $SRC -m32 $STDFLAGS -o $OUTPUT_32
 elif [ "$TARGET" = "install" ]; then
 		set -x
 		
