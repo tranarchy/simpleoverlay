@@ -2,8 +2,18 @@
 
 set -e
 
-SRC="main.c render/microui.c render/glad.c render/gl1.c render/gl3.c render/overlay.c util/math.c data/cpu.c data/mem.c"
-STDFLAGS="-Iinclude -std=c99 -shared -fPIC -Wall"
+SRC_RENDER="src/render/microui.c src/render/glad.c src/render/gl1.c src/render/gl3.c src/render/overlay.c"
+SRC_UTIL="src/util/math.c"
+SRC_DATA="src/data/cpu.c src/data/mem.c"
+
+SRC_DATA_GPU="src/data/amdgpu.c"
+SRC_DATA_GPU_DARWIN="src/data/applegpu.c"
+
+SRC_HOOKS="src/hooks/dlsym.c src/hooks/glx.c src/hooks/egl.c"
+SRC_HOOKS_DARWIN="src/hooks/cgl.c"
+
+SRC="src/main.c $SRC_RENDER $SRC_UTIL $SRC_DATA"
+STDFLAGS="-Isrc/include -std=c99 -shared -fPIC -Wall"
 
 OUTPUT="libsimpleoverlay.so"
 OUTPUT_32="libsimpleoverlay32.so"
@@ -15,9 +25,9 @@ OS=$(uname)
 TARGET="$1"
 
 if [ $OS != "Darwin" ]; then
-		SRC="$SRC hooks/dlsym.c hooks/egl.c hooks/glx.c hooks/vulkan.c util/elfhacks.c data/amdgpu.c"
+		SRC="$SRC src/util/elfhacks.c $SRC_DATA_GPU $SRC_HOOKS"
 else
-		SRC="$SRC hooks/cgl.c data/applegpu.c"
+		SRC="$SRC $SRC_DATA_GPU_DARWIN $SRC_HOOKS_DARWIN"
 		STDFLAGS="$STDFLAGS -framework Foundation -framework IOKit"
 		OUTPUT="libsimpleoverlay.dylib"
 fi
