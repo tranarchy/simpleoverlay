@@ -37,7 +37,7 @@
     #define CPU_STATES_NUM 4
 #endif
 
-static long long cpu_usage[CPU_STATES_NUM];
+static long long cpu_usage[CPU_STATES_NUM] = { 0 };
 static long long cpu_usage_prev[CPU_STATES_NUM] = { 0 };
 
 static void get_cpu_usage_percent(s_overlay_info *overlay_info, long long *cpu_usage, long long *cpu_usage_prev) {
@@ -343,10 +343,10 @@ static void get_cpu_usage_percent(s_overlay_info *overlay_info, long long *cpu_u
             kstat_named_t *user = kstat_data_lookup(kstat, "cpu_nsec_user");
            
             
-            cpu_usage[j++] = idle->value.ui64;
-            cpu_usage[j++] = intr->value.ui64;
-            cpu_usage[j++] = kernel->value.ui64;
-            cpu_usage[j++] = user->value.ui64;
+            cpu_usage[j++] += idle->value.ui64;
+            cpu_usage[j++] += intr->value.ui64;
+            cpu_usage[j++] += kernel->value.ui64;
+            cpu_usage[j++] += user->value.ui64;
         }
 
         kstat_close(kstat_ctl);
