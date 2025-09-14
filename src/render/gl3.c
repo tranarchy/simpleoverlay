@@ -63,7 +63,7 @@ static const GLchar* fragment_shader_source_130 =
     "   FragColor = ourColor * texColor;\n"
     "}\n";
 
-static GLfloat vertices[BUFFER_SIZE * 32];
+static GLfloat vert_buf[BUFFER_SIZE * 32];
 static GLuint  index_buf[BUFFER_SIZE * 6];
 
 static GLfloat projection_matrix[16];
@@ -71,7 +71,12 @@ static GLfloat projection_matrix[16];
 static GLint shader_program;
 static GLuint ebo, vao, vbo, id;
 
+static mu_Rect prev_rect;
+
 static int buf_idx, projection_location, texture_location;
+
+static int prev_width = 0;
+static int prev_height = 0;
 
 void gl3_init(void) {
   int gl_minor_version, gl_major_version;
@@ -112,7 +117,7 @@ void gl3_init(void) {
 
   glBindVertexArray(vao);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vert_buf), vert_buf, GL_DYNAMIC_DRAW);
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(index_buf), index_buf, GL_DYNAMIC_DRAW);
@@ -179,6 +184,7 @@ void gl3_init(void) {
   glUseProgram(shader_program);
 }
 
+
 void gl3_flush(mu_Rect rect, unsigned int* viewport) {
   if (buf_idx == 0) { return; }
 
@@ -187,39 +193,45 @@ void gl3_flush(mu_Rect rect, unsigned int* viewport) {
   int width = viewport[2];
   int height = viewport[3];
 
-  glViewport(viewport[0], viewport[1], width, height);
-  
-  get_projection_matrix(width, height, projection_matrix);
+  if (width != prev_width || height != prev_height || rect.w != prev_rect.w || rect.h != prev_rect.h) {
+    glViewport(viewport[0], viewport[1], width, height);
+    
+    get_projection_matrix(width, height, projection_matrix);
 
-  switch (config.pos_x) {
-      case LEFT_X: x = 5; break;
-      case RIGHT_X: x = width - ((rect.w + 5) * config.scale); break;
-      case CENTER_X: x = (width / 2) - ((rect.w * config.scale) / 2); break; 
+    switch (config.pos_x) {
+        case LEFT_X: x = 5; break;
+        case RIGHT_X: x = width - ((rect.w + 5) * config.scale); break;
+        case CENTER_X: x = (width / 2) - ((rect.w * config.scale) / 2); break; 
+    }
+
+    switch (config.pos_y) {
+        case TOP_Y: y = 5; break;
+        case BOTTOM_Y: y = height - ((rect.h + 5) * config.scale); break;
+        case CENTER_Y: y = (height / 2) - ((rect.h * config.scale) / 2); break; 
+    }
+
+    const GLfloat model[16] = {
+      config.scale, 0.0f, 0.0f, 0.0f,
+      0.0f, config.scale, 0.0f, 0.0f,
+      0.0f, 0.0f,  config.scale, 0.0f,
+      x, y, 0.0f, 1.0f,
+    };
+
+    GLfloat mvp[16];
+    mat4_mult(projection_matrix, model, mvp);
+
+    glUniformMatrix4fv(projection_location, 1, GL_FALSE, mvp);
   }
 
-  switch (config.pos_y) {
-      case TOP_Y: y = 5; break;
-      case BOTTOM_Y: y = height - ((rect.h + 5) * config.scale); break;
-      case CENTER_Y: y = (height / 2) - ((rect.h * config.scale) / 2); break; 
-  }
-
-  const GLfloat model[16] = {
-    config.scale, 0.0f, 0.0f, 0.0f,
-    0.0f, config.scale, 0.0f, 0.0f,
-    0.0f, 0.0f,  config.scale, 0.0f,
-    x, y, 0.0f, 1.0f,
-  };
-
-  GLfloat mvp[16];
-  mat4_mult(projection_matrix, model, mvp);
-
-  glUniformMatrix4fv(projection_location, 1, GL_FALSE, mvp);
+  prev_width = width;
+  prev_height = height;
+  prev_rect = rect;
 
   glBindVertexArray(vao);
   
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), NULL, GL_DYNAMIC_DRAW);
-  glBufferSubData(GL_ARRAY_BUFFER, 0, buf_idx * 32 * sizeof(GLfloat), vertices);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vert_buf), NULL, GL_DYNAMIC_DRAW);
+  glBufferSubData(GL_ARRAY_BUFFER, 0, buf_idx * 32 * sizeof(GLfloat), vert_buf);
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(index_buf), NULL, GL_DYNAMIC_DRAW);
@@ -247,49 +259,49 @@ static void push_quad(mu_Rect dst, mu_Rect src, mu_Color color) {
   float w = src.w / (float) ATLAS_WIDTH;
   float h = src.h / (float) ATLAS_HEIGHT;
 
-  vertices[vertex_idx++] = dst.x;
-  vertices[vertex_idx++] = dst.y;
+  vert_buf[vertex_idx++] = dst.x;
+  vert_buf[vertex_idx++] = dst.y;
 
-  vertices[vertex_idx++] = r;
-  vertices[vertex_idx++] = g;
-  vertices[vertex_idx++] = b;
-  vertices[vertex_idx++] = a;
+  vert_buf[vertex_idx++] = r;
+  vert_buf[vertex_idx++] = g;
+  vert_buf[vertex_idx++] = b;
+  vert_buf[vertex_idx++] = a;
 
-  vertices[vertex_idx++] = x;
-  vertices[vertex_idx++] = y;
+  vert_buf[vertex_idx++] = x;
+  vert_buf[vertex_idx++] = y;
 
-  vertices[vertex_idx++] = dst.x + dst.w;
-  vertices[vertex_idx++] = dst.y;
+  vert_buf[vertex_idx++] = dst.x + dst.w;
+  vert_buf[vertex_idx++] = dst.y;
 
-  vertices[vertex_idx++] = r;
-  vertices[vertex_idx++] = g;
-  vertices[vertex_idx++] = b;
-  vertices[vertex_idx++] = a;
+  vert_buf[vertex_idx++] = r;
+  vert_buf[vertex_idx++] = g;
+  vert_buf[vertex_idx++] = b;
+  vert_buf[vertex_idx++] = a;
 
-  vertices[vertex_idx++] = x + w;
-  vertices[vertex_idx++] = y;
+  vert_buf[vertex_idx++] = x + w;
+  vert_buf[vertex_idx++] = y;
 
-  vertices[vertex_idx++] = dst.x;
-  vertices[vertex_idx++] = dst.y + dst.h;
+  vert_buf[vertex_idx++] = dst.x;
+  vert_buf[vertex_idx++] = dst.y + dst.h;
 
-  vertices[vertex_idx++] = r;
-  vertices[vertex_idx++] = g;
-  vertices[vertex_idx++] = b;
-  vertices[vertex_idx++] = a;
+  vert_buf[vertex_idx++] = r;
+  vert_buf[vertex_idx++] = g;
+  vert_buf[vertex_idx++] = b;
+  vert_buf[vertex_idx++] = a;
 
-  vertices[vertex_idx++] = x;
-  vertices[vertex_idx++] = y + h;
+  vert_buf[vertex_idx++] = x;
+  vert_buf[vertex_idx++] = y + h;
 
-  vertices[vertex_idx++] = dst.x + dst.w;
-  vertices[vertex_idx++] = dst.y + dst.h;
+  vert_buf[vertex_idx++] = dst.x + dst.w;
+  vert_buf[vertex_idx++] = dst.y + dst.h;
 
-  vertices[vertex_idx++] = r;
-  vertices[vertex_idx++] = g;
-  vertices[vertex_idx++] = b;
-  vertices[vertex_idx++] = a;
+  vert_buf[vertex_idx++] = r;
+  vert_buf[vertex_idx++] = g;
+  vert_buf[vertex_idx++] = b;
+  vert_buf[vertex_idx++] = a;
 
-  vertices[vertex_idx++] = x + w;
-  vertices[vertex_idx++] = y + h;
+  vert_buf[vertex_idx++] = x + w;
+  vert_buf[vertex_idx++] = y + h;
 
   index_buf[index_idx++] = element_idx + 0;
   index_buf[index_idx++] = element_idx + 1;

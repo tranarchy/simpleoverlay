@@ -17,6 +17,9 @@ static GLuint  index_buf[BUFFER_SIZE *  6];
 
 static int buf_idx;
 
+static int prev_width = 0;
+static int prev_height = 0;
+
 void gl1_init(void) {
   /* init gl */
   glEnable(GL_BLEND);
@@ -55,7 +58,6 @@ void gl1_flush(mu_Rect rect, unsigned int *viewport) {
   int width = viewport[2];
   int height = viewport[3];
 
-  glViewport(viewport[0], viewport[1], width, height);
   glMatrixMode(GL_PROJECTION);
   glPushMatrix();
   glLoadIdentity();
@@ -64,19 +66,27 @@ void gl1_flush(mu_Rect rect, unsigned int *viewport) {
   glPushMatrix();
   glLoadIdentity();
 
+  if (width != prev_width || height != prev_height) {
+    glViewport(viewport[0], viewport[1], width, height);
+  }
+
+  prev_width = width;
+  prev_height = height;
+
   switch (config.pos_x) {
-        case LEFT_X: x = 5; break;
-        case RIGHT_X: x = width - ((rect.w + 5) * config.scale); break;
-        case CENTER_X: x = (width / 2) - ((rect.w * config.scale) / 2); break; 
+    case LEFT_X: x = 5; break;
+    case RIGHT_X: x = width - ((rect.w + 5) * config.scale); break;
+    case CENTER_X: x = (width / 2) - ((rect.w * config.scale) / 2); break; 
   }
 
   switch (config.pos_y) {
-        case TOP_Y: y = 5; break;
-        case BOTTOM_Y: y = height - ((rect.h + 5) * config.scale); break;
-        case CENTER_Y: y = (height / 2) - ((rect.h * config.scale) / 2); break; 
+    case TOP_Y: y = 5; break;
+    case BOTTOM_Y: y = height - ((rect.h + 5) * config.scale); break;
+    case CENTER_Y: y = (height / 2) - ((rect.h * config.scale) / 2); break; 
   }
 
   glTranslatef(x, y, 1.0f);
+
   glScalef(config.scale, config.scale, 1.0f);
 
   glTexCoordPointer(2, GL_FLOAT, 0, tex_buf);
@@ -93,8 +103,6 @@ void gl1_flush(mu_Rect rect, unsigned int *viewport) {
 }
 
 static void push_quad(mu_Rect dst, mu_Rect src, mu_Color color) {
-  //if (buf_idx == BUFFER_SIZE) { gl_flush(); }
-
   int texvert_idx = buf_idx *  8;
   int   color_idx = buf_idx * 16;
   int element_idx = buf_idx *  4;
@@ -132,12 +140,12 @@ static void push_quad(mu_Rect dst, mu_Rect src, mu_Color color) {
   memcpy(color_buf + color_idx + 12, &color, 4);
 
   /* update index buffer */
-  index_buf[index_idx + 0] = element_idx + 0;
-  index_buf[index_idx + 1] = element_idx + 1;
-  index_buf[index_idx + 2] = element_idx + 2;
-  index_buf[index_idx + 3] = element_idx + 2;
-  index_buf[index_idx + 4] = element_idx + 3;
-  index_buf[index_idx + 5] = element_idx + 1;
+  index_buf[index_idx++] = element_idx + 0;
+  index_buf[index_idx++] = element_idx + 1;
+  index_buf[index_idx++] = element_idx + 2;
+  index_buf[index_idx++] = element_idx + 2;
+  index_buf[index_idx++] = element_idx + 3;
+  index_buf[index_idx++] = element_idx + 1;
 }
 
 int gl1_get_text_width(const char *text, int len) {
