@@ -259,13 +259,12 @@ void draw_overlay(const char *interface, unsigned int *viewport) {
             break;
           }
 
-          int percent = (frametime_avg / frametime) * 100;
+          float difference = frametime - frametime_avg;
+          float percent = (difference / frametime_avg) * 100.0f;
 
-          if (percent >= 99 && percent <= 101) {
-              continue;
+          if (percent < 1.0f && percent > -1.0f) {
+            continue;
           }
-
-          percent -= 100;
 
           if (percent < -50) {
             percent = -50;
@@ -273,12 +272,16 @@ void draw_overlay(const char *interface, unsigned int *viewport) {
             percent = 50;
           }
 
-          percent /= graph_max_height;
+          int bar_height = (int)round(abs(percent) / 50.0f * (float)graph_max_height);
+
+          if (bar_height > graph_max_height) {
+            bar_height = graph_max_height;
+          }
 
           mu_Rect frametime_r = mu_rect(0, 0, 0, 0);
           frametime_r.x = frametime_r_base.x + (i * frametime_element_width);
           frametime_r.w = frametime_element_width;
-          frametime_r.h = abs(percent);
+          frametime_r.h = bar_height;
 
           if (frametime_r.h > graph_max_height) {
             frametime_r.h = graph_max_height;
@@ -286,10 +289,13 @@ void draw_overlay(const char *interface, unsigned int *viewport) {
 
           if (frametime_avg < frametime) {
             frametime_r.y = frametime_r_base.y - frametime_r.h + 1;
+          } else if (frametime_avg > frametime) {
+            frametime_r.y = frametime_r_base.y + 1;
           } else {
             frametime_r.y = frametime_r_base.y;
+            frametime_r.h = 1;
           }
-                  
+ 
           mu_draw_rect(ctx, frametime_r, mu_color(config.key_color[0], config.key_color[1], config.key_color[2], config.key_color[3]));
         }
 
