@@ -11,6 +11,8 @@ export BG_COLOR=10101A96
 export KEY_COLOR=9889FAFF
 export VALUE_COLOR=FFFFFFFF
 
+export NO_GRAPH=0
+
 export FPS_ONLY=0
 
 if [ $(uname) != "Darwin" ]; then

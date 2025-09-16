@@ -222,74 +222,79 @@ void draw_overlay(const char *interface, unsigned int *viewport) {
       add_text(ctx, &init_rect, "RAM", " %.2f GiB", overlay_info.mem);
     }
 
-    win->rect.h += 35;
+    win->rect.h += 5;
+
+    if (!config.no_graph && !config.fps_only) {
+
+      win->rect.h += 30;
     
-    mu_Rect frametime_r_base = mu_layout_next(ctx);
-    frametime_r_base.y += 15;
-    frametime_r_base.w =  win->rect.w - 5;
-    frametime_r_base.h = 1;
+      mu_Rect frametime_r_base = mu_layout_next(ctx);
+      frametime_r_base.y += 15;
+      frametime_r_base.w =  win->rect.w - 5;
+      frametime_r_base.h = 1;
 
-    int graph_max_height = 10;
+      int graph_max_height = 10;
+      
+      float frametime_sum = 0;
+      float frametime_avg = 0;
+
+      for (int i = 1; i < 100; i++) {
+          float frametime = frametimes[i];
+
+          if (frametime == 0) {
+            break;
+          }
+
+          frametime_sum += frametime;
+      }
+
+      frametime_avg = frametime_sum / 100;
+
+      int frametime_element_width = (int)round((float)win->rect.w / 100.0f);
     
-    float frametime_sum = 0;
-    float frametime_avg = 0;
+      for (int i = 0; i < 100; i++) {
+          float frametime = frametimes[i];
 
-    for (int i = 1; i < 100; i++) {
-        float frametime = frametimes[i];
+          if (frametime == 0) {
+            break;
+          }
 
-        if (frametime == 0) {
-          break;
+          int percent = (frametime_avg / frametime) * 100;
+
+          if (percent >= 99 && percent <= 101) {
+              continue;
+          }
+
+          percent -= 100;
+
+          if (percent < -50) {
+            percent = -50;
+          } else if (percent > 50) {
+            percent = 50;
+          }
+
+          percent /= graph_max_height;
+
+          mu_Rect frametime_r = mu_rect(0, 0, 0, 0);
+          frametime_r.x = frametime_r_base.x + (i * frametime_element_width);
+          frametime_r.w = frametime_element_width;
+          frametime_r.h = abs(percent);
+
+          if (frametime_r.h > graph_max_height) {
+            frametime_r.h = graph_max_height;
+          }
+
+          if (frametime_avg < frametime) {
+            frametime_r.y = frametime_r_base.y - frametime_r.h + 1;
+          } else {
+            frametime_r.y = frametime_r_base.y;
+          }
+                  
+          mu_draw_rect(ctx, frametime_r, mu_color(config.key_color[0], config.key_color[1], config.key_color[2], config.key_color[3]));
         }
 
-        frametime_sum += frametime;
-    }
-
-    frametime_avg = frametime_sum / 100;
-
-    int frametime_element_width = (int)round((float)win->rect.w / 100.0f);
-  
-    for (int i = 0; i < 100; i++) {
-        float frametime = frametimes[i];
-
-        if (frametime == 0) {
-          break;
-        }
-
-        int percent = (frametime_avg / frametime) * 100;
-
-        if (percent >= 99 && percent <= 101) {
-            continue;
-        }
-
-        percent -= 100;
-
-        if (percent < -50) {
-          percent = -50;
-        } else if (percent > 50) {
-          percent = 50;
-        }
-
-        percent /= graph_max_height;
-
-        mu_Rect frametime_r = mu_rect(0, 0, 0, 0);
-        frametime_r.x = frametime_r_base.x + (i * frametime_element_width);
-        frametime_r.w = frametime_element_width;
-        frametime_r.h = abs(percent);
-
-        if (frametime_r.h > graph_max_height) {
-          frametime_r.h = graph_max_height;
-        }
-
-        if (frametime_avg < frametime) {
-          frametime_r.y = frametime_r_base.y - frametime_r.h + 1;
-        } else {
-          frametime_r.y = frametime_r_base.y;
-        }
-                
-        mu_draw_rect(ctx, frametime_r, mu_color(config.key_color[0], config.key_color[1], config.key_color[2], config.key_color[3]));
-    }
-
-    mu_draw_rect(ctx, frametime_r_base, mu_color(config.key_color[0], config.key_color[1], config.key_color[2], config.key_color[3]));
+        mu_draw_rect(ctx, frametime_r_base, mu_color(config.key_color[0], config.key_color[1], config.key_color[2], config.key_color[3]));
+      }
 
     mu_end_window(ctx);
   }

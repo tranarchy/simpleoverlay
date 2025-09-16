@@ -22,6 +22,8 @@ typedef struct s_config {
   VERTICAL pos_y;
   HORIZONTAL pos_x;
 
+  bool no_graph;
+
   bool fps_only;
 } s_config;
 
