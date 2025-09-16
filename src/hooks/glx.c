@@ -15,6 +15,7 @@ typedef void (*PFNGLXSWAPBUFFERS)(void *dpy, void *drawable);
 typedef void *(*PFNGLXGETPROCADDRESS)(const unsigned char *procName);
 typedef void *(*PFNGLXGETPROCADDRESSARB)(const unsigned char *procName);
 typedef void (*PFNGLXDESTROYCONTEXT)(void *dpy, void *ctx);
+typedef void *(*PFNGLXCHOOSEFBCONFIG)(void *dpy, int screen, const int *attrib_list, int *nelements);
 typedef void **(*PFNGLXGETFBCONFIGS)(void *dpy, int screen, int *nelements);
 typedef void *(*PFNGLXCREATENEWCONTEXT)(void *dpy, void *config, int render_type, void *share_list, int direct);
 typedef void *(*PFNGLXGETCURRENTCONTEXT)(void);
@@ -55,14 +56,29 @@ static void *get_glx_ctx(void *dpy) {
       return glx_ctx;
     }
 
+    int visual_attribs[] = {
+        0x8012, true,
+        0x8010, 0x00000001,
+        0x8011, 0x00000001,
+        0x22, 0x8002,
+        5, true,
+        0x8000
+    };
+
     void *x11_handle = dlopen("libX11.so", RTLD_LAZY);
     
     PFNXDEFAULTSCREEN XDefaultScreen_ptr = (PFNXDEFAULTSCREEN)dlsym_ptr(x11_handle, "XDefaultScreen");
     PFNGLXCREATENEWCONTEXT glXCreateNewContext_ptr = (PFNGLXCREATENEWCONTEXT)get_libgl_addr("glXCreateNewContext");
     PFNGLXGETFBCONFIGS glXGetFBConfigs_ptr = (PFNGLXGETFBCONFIGS)get_libgl_addr("glXGetFBConfigs");
+    PFNGLXCHOOSEFBCONFIG glXChooseFBConfig_ptr = (PFNGLXCHOOSEFBCONFIG)get_libgl_addr("glXChooseFBConfig");
 
     int fbcount;
-    void **fbc = glXGetFBConfigs_ptr(dpy, XDefaultScreen_ptr(dpy), &fbcount);
+    void **fbc = glXChooseFBConfig_ptr(dpy, XDefaultScreen_ptr(dpy), visual_attribs, &fbcount);
+
+    if (fbcount == 0 || !fbc) {
+       fbc = glXGetFBConfigs_ptr(dpy, XDefaultScreen_ptr(dpy), &fbcount);
+    }
+    
     glx_ctx = glXCreateNewContext_ptr(dpy, fbc[0], 0x8014, NULL, true);
 
     return glx_ctx;
