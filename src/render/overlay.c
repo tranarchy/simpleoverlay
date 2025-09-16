@@ -53,13 +53,20 @@ static PFNGLGETTEXTWIDTH gl_get_text_width_ptr = NULL;
 
 extern s_config config;
 
+typedef enum GPU_DRIVER {
+   AMDGPU,
+   APPLE,
+   UNKOWN
+} GPU_DRIVER;
+
 static int frames;
 
 static long long prev_time;
 static long long prev_time_frametime;
 
+static GPU_DRIVER gpu_driver;
+
 static float frametimes[100] = { 0 };
-static char vendor[128];
 
 static mu_Context *ctx = NULL;
 
@@ -93,11 +100,11 @@ static void populate_overlay_info(void) {
         populate_mem(&overlay_info);
         
         #ifndef __APPLE__
-          if (strcmp(vendor, "AMD") == 0) {
+          if (gpu_driver == AMDGPU) {
             populate_amdgpu(&overlay_info);
           }
         #else
-          if (strcmp(vendor, "Apple") == 0) {
+          if (gpu_driver == APPLE) {
             populate_applegpu(&overlay_info);
           }
         #endif
@@ -188,7 +195,15 @@ void draw_overlay(const char *interface, unsigned int *viewport) {
     ctx->text_height = text_height;
     ctx->style->colors[MU_COLOR_WINDOWBG] = mu_color(config.bg_color[0], config.bg_color[1], config.bg_color[2], config.bg_color[3]);
 
-    strcpy(vendor, (const char*)glGetString(GL_VENDOR));
+    const char *vendor = (const char*)glGetString(GL_VENDOR);
+
+    if (strcmp(vendor, "AMD") == 0) {
+      gpu_driver = AMDGPU;
+    } else if (strcmp(vendor, "Apple") == 0) {
+      gpu_driver = APPLE;
+    } else {
+      gpu_driver = UNKOWN;
+    }
 
     prev_time = prev_time_frametime = 0;
     frames = 0;
