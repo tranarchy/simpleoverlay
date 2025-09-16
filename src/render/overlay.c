@@ -230,11 +230,25 @@ void draw_overlay(const char *interface, unsigned int *viewport) {
     if (config.fps_only) {
       add_text(ctx, &init_rect, "", "%d", overlay_info.fps);
     } else {
-      add_text(ctx, &init_rect, interface, " %d FPS (%.1f ms)", overlay_info.fps, overlay_info.frametime); 
-      add_text(ctx, &init_rect, "CPU", " %d%% (%d C)", overlay_info.cpu_usage, overlay_info.cpu_temp);
-      add_text(ctx, &init_rect, "GPU", " %d%% (%d C)", overlay_info.gpu_usage, overlay_info.gpu_temp);
-      add_text(ctx, &init_rect, "VRAM", " %.2f GiB", overlay_info.gpu_mem);
-      add_text(ctx, &init_rect, "RAM", " %.2f GiB", overlay_info.mem);
+      if ((config.metrics >> 4) & 1) {
+        add_text(ctx, &init_rect, interface, " %d FPS (%.1f ms)", overlay_info.fps, overlay_info.frametime); 
+      }
+      
+      if ((config.metrics >> 3) & 1) {
+        add_text(ctx, &init_rect, "CPU", " %d%% (%d C)", overlay_info.cpu_usage, overlay_info.cpu_temp);
+      }
+      
+      if ((config.metrics >> 2) & 1) {
+        add_text(ctx, &init_rect, "GPU", " %d%% (%d C)", overlay_info.gpu_usage, overlay_info.gpu_temp);
+      }
+
+      if ((config.metrics >> 1) & 1) {
+        add_text(ctx, &init_rect, "VRAM", " %.2f GiB", overlay_info.gpu_mem);
+      }
+
+      if (config.metrics & 1) {
+        add_text(ctx, &init_rect, "RAM", " %.2f GiB", overlay_info.mem);
+      }
     }
 
     win->rect.h += 5;

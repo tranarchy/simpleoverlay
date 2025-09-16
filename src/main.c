@@ -1,3 +1,4 @@
+#include <string.h>
 #include <stdlib.h>
 
 #include <common.h>
@@ -28,9 +29,19 @@ static void init(void) {
   hex_to_rgba(getenv("KEY_COLOR") ? getenv("KEY_COLOR") : "9889FAFF", config.key_color);
   hex_to_rgba(getenv("VALUE_COLOR") ? getenv("VALUE_COLOR") : "FFFFFFFF", config.value_color);
 
-  config.no_graph = getenv("NO_GRAPH") ? atoi(getenv("NO_GRAPH")) : false;
+  const char *metrics_str = getenv("METRICS") ? getenv("METRICS") : "FPS CPU GPU VRAM MEM";
+  
+  config.no_graph = getenv("NO_GRAPH") ? atoi(getenv("NO_GRAPH")) : true;
   
   config.fps_only = getenv("FPS_ONLY") ? atoi(getenv("FPS_ONLY")) : false;
+
+  config.metrics = 0;
+
+  config.metrics += (strstr(metrics_str, "FPS") ? 1 : 0) * (2 * 2 * 2 * 2);
+  config.metrics += (strstr(metrics_str, "CPU") ? 1 : 0) * (2 * 2 * 2);
+  config.metrics += (strstr(metrics_str, "GPU") ? 1 : 0) * (2 * 2);
+  config.metrics += (strstr(metrics_str, "VRAM") ? 1 : 0) * 2;
+  config.metrics += (strstr(metrics_str, "MEM") ? 1 : 0);
   
   #if defined(__APPLE__)
     hook_cgl();
