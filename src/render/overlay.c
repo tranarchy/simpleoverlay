@@ -40,6 +40,7 @@ void populate_cpu(s_overlay_info *s_overlay_info);
 
 #ifndef __APPLE__
   void populate_amdgpu(s_overlay_info *overlay_info);
+  void populate_nvidia(s_overlay_info *overlay_info);
 #else
   void populate_applegpu(s_overlay_info *overlay_info);
 #endif
@@ -56,7 +57,8 @@ extern s_config config;
 typedef enum GPU_DRIVER {
    AMDGPU,
    APPLE,
-   UNKOWN
+   NVIDIA,
+   UNKNOWN
 } GPU_DRIVER;
 
 static int frames;
@@ -102,6 +104,8 @@ static void populate_overlay_info(void) {
         #ifndef __APPLE__
           if (gpu_driver == AMDGPU) {
             populate_amdgpu(&overlay_info);
+          } else if (gpu_driver == NVIDIA) {
+            populate_nvidia(&overlay_info);
           }
         #else
           if (gpu_driver == APPLE) {
@@ -199,10 +203,12 @@ void draw_overlay(const char *interface, unsigned int *viewport) {
 
     if (strcmp(vendor, "AMD") == 0) {
       gpu_driver = AMDGPU;
+    } else if (strcmp(vendor, "NVIDIA Corporation") == 0) {
+      gpu_driver = NVIDIA;
     } else if (strcmp(vendor, "Apple") == 0) {
       gpu_driver = APPLE;
     } else {
-      gpu_driver = UNKOWN;
+      gpu_driver = UNKNOWN;
     }
 
     prev_time = prev_time_frametime = 0;

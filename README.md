@@ -75,4 +75,4 @@ service kld restart
 <br>
 
 > [!NOTE]
-> Currently GPU information is limited to AMD and Apple GPUs
+> Currently GPU information is limited to AMD, NVIDIA and Apple GPUs

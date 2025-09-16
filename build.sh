@@ -6,7 +6,7 @@ SRC_RENDER="src/render/microui.c src/render/glad.c src/render/gl1.c src/render/g
 SRC_UTIL="src/util/math.c"
 SRC_DATA="src/data/cpu.c src/data/mem.c"
 
-SRC_DATA_GPU="src/data/amdgpu.c"
+SRC_DATA_GPU="src/data/amdgpu.c src/data/nvidia.c"
 SRC_DATA_GPU_DARWIN="src/data/applegpu.c"
 
 SRC_HOOKS="src/hooks/dlsym.c src/hooks/glx.c src/hooks/egl.c"
