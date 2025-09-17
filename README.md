@@ -1,7 +1,8 @@
 # simpleoverlay
 <p float="left">
-<img width=49% src="https://github.com/user-attachments/assets/ffdd6714-a7b4-4689-8fb4-598e8ce1d9b9" />
-<img width=49% src="https://github.com/user-attachments/assets/7f44352e-4a34-4d20-9dd6-d6b5c47f9cbd" />
+<img width=49% src="https://github.com/user-attachments/assets/72fba10a-405c-4fac-8029-e3acbd8ba651" />
+<img width=49% src="https://github.com/user-attachments/assets/9b54f96c-4ca5-47bc-90d2-d1a9e1543538" />
+<img width=49% src="https://github.com/user-attachments/assets/4a802f9d-b56a-4fdd-90f3-c6225955df40" />
 </p>
 
 <p align="center">OpenGL performance overlay for Linux, macOS, *BSD and Illumos</p>
