@@ -164,9 +164,79 @@ static void add_text(mu_Context *ctx, mu_Rect *init_rect, const char *key, const
     win->rect.h += text_height(NULL);
 }
 
-void cleanup(void) {
-    free(ctx);
-    ctx = NULL;
+static void draw_graph(mu_Container *win) {
+    mu_Rect frametime_r_base = mu_layout_next(ctx);
+    frametime_r_base.y += 15;
+    frametime_r_base.w =  win->rect.w - 5;
+    frametime_r_base.h = 1;
+
+    int graph_max_height = 10;
+      
+    float frametime_sum = 0;
+    float frametime_avg = 0;
+
+    for (int i = 1; i < 100; i++) {
+        float frametime = frametimes[i];
+
+        if (frametime == 0) {
+          break;
+        }
+
+        frametime_sum += frametime;
+    }
+
+    frametime_avg = frametime_sum / 100;
+
+    int frametime_element_width = (int)round((float)win->rect.w / 100.0f);
+    
+    for (int i = 0; i < 100; i++) {
+        float frametime = frametimes[i];
+
+        if (frametime == 0) {
+          break;
+        }
+
+        float difference = frametime - frametime_avg;
+        float percent = (difference / frametime_avg) * 100.0f;
+
+        if (percent < 1.0f && percent > -1.0f) {
+          continue;
+        }
+
+        if (percent < -50) {
+          percent = -50;
+        } else if (percent > 50) {
+          percent = 50;
+        }
+
+        int bar_height = (int)round(abs(percent) / 50.0f * (float)graph_max_height);
+
+        if (bar_height > graph_max_height) {
+          bar_height = graph_max_height;
+        }
+
+        mu_Rect frametime_r = mu_rect(0, 0, 0, 0);
+        frametime_r.x = frametime_r_base.x + (i * frametime_element_width);
+        frametime_r.w = frametime_element_width;
+        frametime_r.h = bar_height;
+
+        if (frametime_r.h > graph_max_height) {
+          frametime_r.h = graph_max_height;
+        }
+
+        if (frametime_avg < frametime) {
+          frametime_r.y = frametime_r_base.y - frametime_r.h + 1;
+        } else if (frametime_avg > frametime) {
+          frametime_r.y = frametime_r_base.y + 1;
+        } else {
+          frametime_r.y = frametime_r_base.y;
+          frametime_r.h = 1;
+        }
+ 
+        mu_draw_rect(ctx, frametime_r, mu_color(config.key_color[0], config.key_color[1], config.key_color[2], config.key_color[3]));
+      }
+
+      mu_draw_rect(ctx, frametime_r_base, mu_color(config.key_color[0], config.key_color[1], config.key_color[2], config.key_color[3]));
 }
 
 void draw_overlay(const char *interface, unsigned int *viewport) {
@@ -260,82 +330,9 @@ void draw_overlay(const char *interface, unsigned int *viewport) {
     win->rect.h += 5;
 
     if (!config.no_graph && !config.fps_only) {
-
       win->rect.h += 30;
-    
-      mu_Rect frametime_r_base = mu_layout_next(ctx);
-      frametime_r_base.y += 15;
-      frametime_r_base.w =  win->rect.w - 5;
-      frametime_r_base.h = 1;
-
-      int graph_max_height = 10;
-      
-      float frametime_sum = 0;
-      float frametime_avg = 0;
-
-      for (int i = 1; i < 100; i++) {
-          float frametime = frametimes[i];
-
-          if (frametime == 0) {
-            break;
-          }
-
-          frametime_sum += frametime;
-      }
-
-      frametime_avg = frametime_sum / 100;
-
-      int frametime_element_width = (int)round((float)win->rect.w / 100.0f);
-    
-      for (int i = 0; i < 100; i++) {
-          float frametime = frametimes[i];
-
-          if (frametime == 0) {
-            break;
-          }
-
-          float difference = frametime - frametime_avg;
-          float percent = (difference / frametime_avg) * 100.0f;
-
-          if (percent < 1.0f && percent > -1.0f) {
-            continue;
-          }
-
-          if (percent < -50) {
-            percent = -50;
-          } else if (percent > 50) {
-            percent = 50;
-          }
-
-          int bar_height = (int)round(abs(percent) / 50.0f * (float)graph_max_height);
-
-          if (bar_height > graph_max_height) {
-            bar_height = graph_max_height;
-          }
-
-          mu_Rect frametime_r = mu_rect(0, 0, 0, 0);
-          frametime_r.x = frametime_r_base.x + (i * frametime_element_width);
-          frametime_r.w = frametime_element_width;
-          frametime_r.h = bar_height;
-
-          if (frametime_r.h > graph_max_height) {
-            frametime_r.h = graph_max_height;
-          }
-
-          if (frametime_avg < frametime) {
-            frametime_r.y = frametime_r_base.y - frametime_r.h + 1;
-          } else if (frametime_avg > frametime) {
-            frametime_r.y = frametime_r_base.y + 1;
-          } else {
-            frametime_r.y = frametime_r_base.y;
-            frametime_r.h = 1;
-          }
- 
-          mu_draw_rect(ctx, frametime_r, mu_color(config.key_color[0], config.key_color[1], config.key_color[2], config.key_color[3]));
-        }
-
-        mu_draw_rect(ctx, frametime_r_base, mu_color(config.key_color[0], config.key_color[1], config.key_color[2], config.key_color[3]));
-      }
+      draw_graph(win);
+    }
 
     mu_end_window(ctx);
   }

@@ -4,7 +4,6 @@
 
 #include <glad.h>
 
-void cleanup(void);
 void draw_overlay(const char *interface, unsigned int *viewport);
 
 typedef void *(*PFNDLSYM)(void *handle, const char *symbol);
@@ -113,8 +112,6 @@ void glXDestroyContext(void *dpy, void *ctx) {
     if (!glXDestroyContext_ptr) {
        glXDestroyContext_ptr = (PFNGLXDESTROYCONTEXT)get_libgl_addr("glXDestroyContext"); 
     }
-
-    cleanup();
     
     glXDestroyContext_ptr(dpy, ctx);
 }

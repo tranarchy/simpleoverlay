@@ -3,7 +3,6 @@
 
 #include <glad.h>
 
-void cleanup(void);
 void draw_overlay(const char *interface, unsigned int *viewport);
 
 typedef void *(*PFNDLSYM)(void *handle, const char *symbol);
@@ -94,7 +93,6 @@ unsigned int eglTerminate(void *display) {
 
     eglDestroyContext_ptr(display, egl_ctx);
     egl_ctx = NULL;
-    cleanup();
 
     return eglTerminate_ptr(display);
 }
