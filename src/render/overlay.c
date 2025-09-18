@@ -209,7 +209,7 @@ static void draw_graph(mu_Container *win) {
           percent = 50;
         }
 
-        int bar_height = (int)round(abs(percent) / 50.0f * (float)graph_max_height);
+        int bar_height = (int)round(fabsf(percent) / 50.0f * (float)graph_max_height);
 
         if (bar_height > graph_max_height) {
           bar_height = graph_max_height;
