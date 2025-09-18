@@ -293,9 +293,17 @@ static void get_cpu_usage_percent(s_overlay_info *overlay_info, long long *cpu_u
 
         CFDictionaryRef sensors = CFDictionaryCreate(0, (const void**)keys, (const void**)nums, 2, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
 
+        if (sensors == NULL) {
+            return;
+        }
+
         IOHIDEventSystemClientRef system = IOHIDEventSystemClientCreate(kCFAllocatorDefault);
         IOHIDEventSystemClientSetMatching(system, sensors);
         CFArrayRef matchingsrvs = IOHIDEventSystemClientCopyServices(system);
+
+        if (matchingsrvs == NULL) {
+            return;
+        }
 
         long count = CFArrayGetCount(matchingsrvs);
 
