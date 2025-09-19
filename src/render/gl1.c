@@ -20,6 +20,8 @@ static int buf_idx;
 static int prev_width = 0;
 static int prev_height = 0;
 
+bool gl1_bind_buf = true;
+
 void gl1_init(void) {
   /* init gl */
   glEnable(GL_BLEND);
@@ -89,9 +91,12 @@ void gl1_flush(mu_Rect rect, unsigned int *viewport) {
 
   glScalef(config.scale, config.scale, 1.0f);
 
-  glTexCoordPointer(2, GL_FLOAT, 0, tex_buf);
-  glVertexPointer(2, GL_FLOAT, 0, vert_buf);
-  glColorPointer(4, GL_UNSIGNED_BYTE, 0, color_buf);
+  if (gl1_bind_buf) {
+    glTexCoordPointer(2, GL_FLOAT, 0, tex_buf);
+    glVertexPointer(2, GL_FLOAT, 0, vert_buf);
+    glColorPointer(4, GL_UNSIGNED_BYTE, 0, color_buf);
+  }
+
   glDrawElements(GL_TRIANGLES, buf_idx * 6, GL_UNSIGNED_INT, index_buf);
 
   glMatrixMode(GL_MODELVIEW);
@@ -99,7 +104,9 @@ void gl1_flush(mu_Rect rect, unsigned int *viewport) {
   glMatrixMode(GL_PROJECTION);
   glPopMatrix();
 
-  buf_idx = 0;
+  if (gl1_bind_buf) {
+    buf_idx = 0;
+  }
 }
 
 static void push_quad(mu_Rect dst, mu_Rect src, mu_Color color) {

@@ -78,6 +78,8 @@ static int buf_idx, projection_location, texture_location;
 static int prev_width = 0;
 static int prev_height = 0;
 
+bool gl3_bind_buf = true;
+
 void gl3_init(void) {
   int gl_minor_version, gl_major_version;
 
@@ -228,19 +230,23 @@ void gl3_flush(mu_Rect rect, unsigned int* viewport) {
   prev_rect = rect;
 
   glBindVertexArray(vao);
+
+  if (gl3_bind_buf) {
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vert_buf), NULL, GL_DYNAMIC_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, buf_idx * 32 * sizeof(GLfloat), vert_buf);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(index_buf), NULL, GL_DYNAMIC_DRAW);
+    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, buf_idx * 6 * sizeof(GLuint), index_buf);
+  }
   
-  glBindBuffer(GL_ARRAY_BUFFER, vbo);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(vert_buf), NULL, GL_DYNAMIC_DRAW);
-  glBufferSubData(GL_ARRAY_BUFFER, 0, buf_idx * 32 * sizeof(GLfloat), vert_buf);
-
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(index_buf), NULL, GL_DYNAMIC_DRAW);
-  glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, buf_idx * 6 * sizeof(GLuint), index_buf);
-
   glDrawElements(GL_TRIANGLES, buf_idx * 6, GL_UNSIGNED_INT, 0);
   glBindVertexArray(0);
 
-  buf_idx = 0;
+  if (gl3_bind_buf) {
+    buf_idx = 0;
+  }
 }
 
 static void push_quad(mu_Rect dst, mu_Rect src, mu_Color color) {

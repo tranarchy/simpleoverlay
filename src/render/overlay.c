@@ -54,6 +54,9 @@ static PFNGLGETTEXTWIDTH gl_get_text_width_ptr = NULL;
 
 extern s_config config;
 
+extern bool gl1_bind_buf;
+extern bool gl3_bind_buf;
+
 typedef enum GPU_DRIVER {
    AMDGPU,
    APPLE,
@@ -63,8 +66,7 @@ typedef enum GPU_DRIVER {
 
 static int frames;
 
-static long long prev_time;
-static long long prev_time_frametime;
+static long long prev_time, prev_time_frametime, prev_time_bind_buf;
 
 static GPU_DRIVER gpu_driver;
 
@@ -73,6 +75,8 @@ static float frametimes[100] = { 0 };
 static mu_Context *ctx = NULL;
 
 static s_overlay_info overlay_info = { 0 };
+
+static bool *gl_bind_buf;
 
 static long long get_time_nano(void) {
   struct timespec ts;
@@ -92,6 +96,11 @@ static void populate_overlay_info(void) {
     frametimes[99] = frametime;
 
     frames++;
+
+    if (cur_time - prev_time_bind_buf >= 1e7) {
+      *gl_bind_buf = true;
+      prev_time_bind_buf = cur_time;
+    }
 
     if (cur_time - prev_time >= 1e9) {
       overlay_info.fps = frames;
@@ -254,6 +263,7 @@ void draw_overlay(const char *interface, unsigned int *viewport) {
       gl_draw_text_ptr = &gl1_draw_text;
       gl_get_text_height_ptr = &gl1_get_text_height;
       gl_get_text_width_ptr = &gl1_get_text_width;
+      gl_bind_buf = &gl1_bind_buf;
     } else {
       gl_init_ptr = &gl3_init;
       gl_flush_ptr = &gl3_flush;
@@ -261,6 +271,7 @@ void draw_overlay(const char *interface, unsigned int *viewport) {
       gl_draw_text_ptr = &gl3_draw_text;
       gl_get_text_height_ptr = &gl3_get_text_height;
       gl_get_text_width_ptr = &gl3_get_text_width;
+      gl_bind_buf = &gl3_bind_buf;
     }
 
     gl_init_ptr();
@@ -281,7 +292,7 @@ void draw_overlay(const char *interface, unsigned int *viewport) {
       gpu_driver = UNKNOWN;
     }
 
-    prev_time = prev_time_frametime = 0;
+    prev_time = prev_time_frametime, prev_time_bind_buf = 0;
     frames = 0;
   }
 
@@ -338,14 +349,18 @@ void draw_overlay(const char *interface, unsigned int *viewport) {
   }
 
   mu_end(ctx);
-  
-  mu_Command *cmd = NULL;
-  while (mu_next_command(ctx, &cmd)) {    
-    switch (cmd->type) {
-        case MU_COMMAND_TEXT: gl_draw_text_ptr(cmd->text.str, cmd->text.pos, cmd->text.color); break;
-        case MU_COMMAND_RECT: gl_draw_rect_ptr(cmd->rect.rect, cmd->rect.color); break;
+
+  gl_flush_ptr(win->rect, viewport);
+
+  if (*gl_bind_buf) {
+    mu_Command *cmd = NULL;
+    while (mu_next_command(ctx, &cmd)) {    
+      switch (cmd->type) {
+          case MU_COMMAND_TEXT: gl_draw_text_ptr(cmd->text.str, cmd->text.pos, cmd->text.color); break;
+          case MU_COMMAND_RECT: gl_draw_rect_ptr(cmd->rect.rect, cmd->rect.color); break;
+      }
     }
   }
 
-  gl_flush_ptr(win->rect, viewport);
+  *gl_bind_buf = false;
 }
