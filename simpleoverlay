@@ -15,7 +15,7 @@ export METRICS="FPS CPU GPU VRAM MEM"
 
 export NO_GRAPH=1
 
-export FPS_ONLY=1
+export FPS_ONLY=0
 
 if [ $(uname) != "Darwin" ]; then
     SIMPLEOVERLAY_LIBS="/usr/local/lib/libsimpleoverlay.so"
