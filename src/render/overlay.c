@@ -306,7 +306,7 @@ void draw_overlay(const char *interface, unsigned int *viewport) {
 
   mu_begin(ctx);
   
-  mu_Container *win;
+  mu_Container *win = NULL;
   mu_Rect init_rect = mu_rect(0, 0, 0, 0);
 
   if (mu_begin_window_ex(ctx, "", init_rect, opt)) {
