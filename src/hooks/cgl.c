@@ -1,6 +1,7 @@
 #include <dlfcn.h>
 
 #include <objc/runtime.h>
+#include <CoreFoundation/CoreFoundation.h>
 
 #include <glad.h>
 
@@ -12,6 +13,7 @@ typedef void* (*PFNCGLGETPIXELFORMAT)(void *gl);
 typedef int (*PFNCGLCREATECONTEXT)(void *pixel_format, void *share_context, void **gl);
 typedef void *(*PFNCGLGETCURRENTCONTEXT)(void);
 typedef int (*PFNCGLSETCURRENTCONTEXT)(void *gl);
+typedef int (*PFNCGLGETSURFACEBOUNDS)(int cid, int wid, int sid, CGRect *bounds);
 
 static PFNCGLSETSURFACE CGLSetSurface_ptr = NULL;
 static PFNCGLGETSURFACE CGLGetSurface_ptr = NULL;
@@ -19,6 +21,7 @@ static PFNCGLGETPIXELFORMAT CGLGetPixelFormat_ptr = NULL;
 static PFNCGLCREATECONTEXT CGLCreateContext_ptr = NULL;
 static PFNCGLGETCURRENTCONTEXT CGLGetCurrentContext_ptr = NULL;
 static PFNCGLSETCURRENTCONTEXT CGLSetCurrentContext_ptr = NULL;
+static PFNCGLGETSURFACEBOUNDS CGLGetSurfaceBounds_ptr = NULL;
 
 static IMP flushBuffer_ptr;
 
@@ -68,18 +71,28 @@ static void flushBuffer(id self, SEL _cmd) {
       CGLSetCurrentContext_ptr = (PFNCGLSETCURRENTCONTEXT)get_libcgl_addr("CGLSetCurrentContext");
       CGLGetSurface_ptr = (PFNCGLGETSURFACE)get_libcgl_addr("CGLGetSurface");
       CGLSetSurface_ptr = (PFNCGLSETSURFACE)get_libcgl_addr("CGLSetSurface");
-      
+      CGLGetSurfaceBounds_ptr = (PFNCGLGETSURFACEBOUNDS)get_libcgl_addr("CGSGetSurfaceBounds");
   }
+
   int viewport[4];
   glGetIntegerv(GL_VIEWPORT, viewport);
 
+  CGRect bounds;
+
+  glFlush();
+
   prev_cgl_ctx = CGLGetCurrentContext_ptr();
   CGLGetSurface_ptr(prev_cgl_ctx, &cid, &wid, &sid);
+  CGLGetSurfaceBounds_ptr(cid, wid, sid, &bounds);
+
+  viewport[2] = (int)bounds.size.width;
+  viewport[3] = (int)bounds.size.height;
 
   CGLSetSurface_ptr(get_cgl_ctx(), cid, wid, sid);
   CGLSetCurrentContext_ptr(get_cgl_ctx());
   draw_overlay("CGL", (unsigned int*)viewport);
   glFlush();
+
   CGLSetCurrentContext_ptr(prev_cgl_ctx);
 
   ((void(*)(id, SEL))flushBuffer_ptr)(self, _cmd);
