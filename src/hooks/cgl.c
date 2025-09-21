@@ -5,6 +5,10 @@
 
 #include <glad.h>
 
+#define DYLD_INTERPOSE(_replacment,_replacee) \
+__attribute__((used)) static struct{ const void* replacment; const void* replacee; } _interpose_##_replacee \
+__attribute__ ((section ("__DATA,__interpose"))) = { (const void*)(unsigned long)&_replacment, (const void*)(unsigned long)&_replacee };
+
 void draw_overlay(const char *interface, unsigned int *viewport);
 
 typedef int (*PFNCGLSETSURFACE)(void *gl, int cid, int wid, int sid);
@@ -26,6 +30,8 @@ static PFNCGLGETSURFACEBOUNDS CGLGetSurfaceBounds_ptr = NULL;
 static IMP flushBuffer_ptr;
 
 static int cid, wid, sid;
+
+static Class ns_opengl_ctx_class = NULL;
 
 static void *cgl_handle = NULL;
 static void *cgl_ctx, *prev_cgl_ctx = NULL;
@@ -99,7 +105,11 @@ static void flushBuffer(id self, SEL _cmd) {
 }
 
 void hook_cgl(void) {
-  Class ns_opengl_ctx_class = objc_getClass("NSOpenGLContext");
+  if (ns_opengl_ctx_class) {
+    return;
+  }
+
+  ns_opengl_ctx_class = objc_getClass("NSOpenGLContext");
 
   if (!ns_opengl_ctx_class) {
     return;
@@ -112,3 +122,11 @@ void hook_cgl(void) {
 
   method_setImplementation(original_flush_buffer_method, (IMP)flushBuffer);
 }
+
+
+void *fake_dlsym(void *handle, const char *symbol) {
+  hook_cgl();
+  return dlsym(handle, symbol);
+}
+
+DYLD_INTERPOSE(fake_dlsym, dlsym);
