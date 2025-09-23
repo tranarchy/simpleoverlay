@@ -33,7 +33,13 @@ void *dlsym(void *handle, const char *symbol) {
             dlsym_ptr = (PFNDLSYM)&_dlsym;
         #else
             eh_obj_t libc;
-            eh_find_obj(&libc, "*libc.so*");
+
+            #if defined(__GLIBC__) || !defined(__linux__)
+                eh_find_obj(&libc, "*libc.so*");
+            #else
+                eh_find_obj(&libc, "*ld-musl-*.so*");
+            #endif
+                
             eh_find_sym(&libc, "dlsym", (void **) &dlsym_ptr);
             eh_destroy_obj(&libc);
         #endif
