@@ -4,6 +4,12 @@
 
 #include <elfhacks.h>
 
+#if defined(__GLIBC__) || !defined(__linux__)
+    #define LIBC "*libc.so*"
+#else
+    #define LIBC "*ld-musl-*.so*"
+#endif
+
 unsigned int eglSwapBuffers(void *display, void *surf);
 unsigned int eglTerminate(void *display);
 void *eglGetProcAddress(char const *procname);
@@ -34,12 +40,7 @@ void *dlsym(void *handle, const char *symbol) {
         #else
             eh_obj_t libc;
 
-            #if defined(__GLIBC__) || !defined(__linux__)
-                eh_find_obj(&libc, "*libc.so*");
-            #else
-                eh_find_obj(&libc, "*ld-musl-*.so*");
-            #endif
-                
+            eh_find_obj(&libc, LIBC);                
             eh_find_sym(&libc, "dlsym", (void **) &dlsym_ptr);
             eh_destroy_obj(&libc);
         #endif
