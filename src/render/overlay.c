@@ -19,6 +19,8 @@ typedef void (*PFNGLDRAWTEXT)(const char *text, mu_Vec2 pos, mu_Color color);
 typedef int (*PFNGLGETTEXTHEIGHT)(void);
 typedef int (*PFNGLGETTEXTWIDTH)(const char *text, int len);
 
+int lerp(float delta, int start, int end);
+
 void gl1_init(void);
 void gl1_flush(mu_Rect rect, unsigned int* viewport);
 void gl1_draw_rect(mu_Rect rect, mu_Color color);
@@ -69,6 +71,16 @@ static int frames;
 static long long prev_time, prev_time_frametime, prev_time_bind_buf;
 
 static GPU_DRIVER gpu_driver;
+
+static const int rainbow_colors[] = {
+  0xFF6663FF,
+  0xFEB144FF,
+  0xFDFD97FF,
+  0x9EE09EFF,
+  0x6DC1E3FF,
+  0xCC99C9FF,
+  0xCF7ECAFF
+};
 
 static float frametimes[100] = { 0 };
 
@@ -139,6 +151,23 @@ static int text_height(mu_Font font) {
   return gl_get_text_height_ptr();
 }
 
+static void get_rainbow_color(int *rgba) {
+    double time = (double)get_time_nano() / 1e6 / 500; 
+
+    int color_index = (int) time % 7;
+    int target_color_index = (color_index + 1) % 7;
+
+    unsigned long rainbow_start = rainbow_colors[color_index];
+    unsigned long rainbow_end = rainbow_colors[target_color_index];
+
+    float lerped_amount = (float) (time - floor(time));
+    
+    rgba[0] = lerp(lerped_amount, (rainbow_start >> 24) & 0xFF, (rainbow_end >> 24) & 0xFF);
+    rgba[1] = lerp(lerped_amount, (rainbow_start >> 16) & 0xFF, (rainbow_end >> 16) & 0xFF);
+    rgba[2] = lerp(lerped_amount, (rainbow_start >> 8) & 0xFF, (rainbow_end >> 8) & 0xFF);
+    rgba[3] = lerp(lerped_amount, rainbow_start & 0xFF, rainbow_end & 0xFF);
+}
+
 static void add_text(mu_Context *ctx, mu_Rect *init_rect, const char *key, const char *value, ...) { 
     va_list args;
     char value_buffer[256];
@@ -148,7 +177,18 @@ static void add_text(mu_Context *ctx, mu_Rect *init_rect, const char *key, const
     va_end(args);
 
     if (!config.fps_only) {
-      ctx->style->colors[MU_COLOR_TEXT] = mu_color(config.key_color[0], config.key_color[1], config.key_color[2], config.key_color[3]);
+      int rgba[] = {
+        config.key_color[0], 
+        config.key_color[1], 
+        config.key_color[2], 
+        config.key_color[3]
+      };
+
+      if (config.rainbow) {
+        get_rainbow_color(rgba);
+      }
+    
+      ctx->style->colors[MU_COLOR_TEXT] = mu_color(rgba[0], rgba[1], rgba[2], rgba[3]);
       mu_text(ctx, key);
     }
 
@@ -163,8 +203,7 @@ static void add_text(mu_Context *ctx, mu_Rect *init_rect, const char *key, const
     } else {
       new_rect = mu_rect(5, 5, text_width(NULL, value_buffer, -1) + 5, 0);
     }
-    
-      
+       
     if ((*init_rect).w < new_rect.w) {
       (*init_rect).w = new_rect.w;
       win->rect.w = new_rect.w;
@@ -307,7 +346,7 @@ void draw_overlay(const char *interface, unsigned int *viewport) {
   mu_begin(ctx);
   
   mu_Container *win = NULL;
-  mu_Rect init_rect = mu_rect(0, 0, 0, 0);
+  mu_Rect init_rect = mu_rect(1, 1, 0, 0);
 
   if (mu_begin_window_ex(ctx, "", init_rect, opt)) {
     win = mu_get_container(ctx, "");

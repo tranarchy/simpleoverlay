@@ -18,6 +18,7 @@ typedef struct s_config {
   int bg_color[4];
   int key_color[4];
   int value_color[4];
+  bool rainbow;
 
   VERTICAL pos_y;
   HORIZONTAL pos_x;

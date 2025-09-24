@@ -1,3 +1,4 @@
+#include <math.h>
 #include <string.h>
 
 #define _MAT4_INDEX(row, column) ((row) + (column) * 4)
@@ -39,4 +40,8 @@ void get_projection_matrix(int width, int height, float *projection_matrix)
 	};
 
 	memcpy(projection_matrix, projection, 16 * sizeof(float));
+}
+
+int lerp(float delta, int start, int end) {
+	return start + floor(delta * (float)(end - start));
 }

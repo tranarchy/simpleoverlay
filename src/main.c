@@ -28,6 +28,7 @@ static void init(void) {
   hex_to_rgba(getenv("BG_COLOR") ? getenv("BG_COLOR") : "10101A96", config.bg_color);
   hex_to_rgba(getenv("KEY_COLOR") ? getenv("KEY_COLOR") : "9889FAFF", config.key_color);
   hex_to_rgba(getenv("VALUE_COLOR") ? getenv("VALUE_COLOR") : "FFFFFFFF", config.value_color);
+  config.rainbow = getenv("RAINBOW") ? atoi(getenv("RAINBOW")) : false;
 
   const char *metrics_str = getenv("METRICS") ? getenv("METRICS") : "FPS CPU GPU VRAM MEM";
   
