@@ -21,6 +21,7 @@ simpleoverlay can be configured with the following environment variables
 - BG_COLOR
 - KEY_COLOR
 - VALUE_COLOR
+- RAINBOW
 - METRICS
 - NO_GRAPH
 - FPS_ONLY
