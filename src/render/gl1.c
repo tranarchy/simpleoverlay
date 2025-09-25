@@ -31,22 +31,78 @@ void gl1_init(void) {
   glEnableClientState(GL_TEXTURE_COORD_ARRAY);
   glEnableClientState(GL_COLOR_ARRAY);
 
-  for(int i=0; i<128; i++) {
-    for(int j=0; j<128; j++) {
-      if(atlas_texture[i][j]==' ') {
-        atlas_texture[i][j] = 0;
-      } else {
-        atlas_texture[i][j] = -1;
+  GLubyte byte_texture[ATLAS_HEIGHT][ATLAS_WIDTH];
+
+  GLubyte rgba_texture[ATLAS_WIDTH * ATLAS_HEIGHT * 4];
+
+	for(int i = 0; i < ATLAS_HEIGHT; i++) {
+    for(int j = 0; j < ATLAS_WIDTH; j++) {
+      byte_texture[i][j] = 0;
+    }
+  }
+
+  GLuint r, g, b, a;
+	int rgba_index = 0;
+
+	for(int i = 0; i < ATLAS_HEIGHT; i++) {
+    for(int j = 0; j < ATLAS_WIDTH; j++) {
+    
+      char current_char = atlas_texture[i][j];
+
+      if (current_char == '*') {
+        byte_texture[i][j] = 1;
+                   
+        for (int dy = -1; dy <= 1; dy++) {
+          for (int dx = -1; dx <= 1; dx++) {
+            if (dx == 0 && dy == 0) continue;
+
+            int ny = i + dy;
+            int nx = j + dx;
+
+            if (ny >= 0 && nx >= 0 && ny < ATLAS_HEIGHT && nx < ATLAS_WIDTH) {
+              if (byte_texture[ny][nx] == 0) {
+                byte_texture[ny][nx] = 2;
+              }
+            }
+          }
+        }
       }
     }
   }
 
-  /* init texture */
+  for(int i = 0; i < ATLAS_HEIGHT; i++) {
+    for(int j = 0; j < ATLAS_WIDTH; j++) {
+      GLubyte atlas_cur = byte_texture[i][j];
+
+			if (atlas_cur == 1) {
+				r = 255;
+				g = 255;
+				b = 255;
+				a = 255;
+			} else if (atlas_cur == 2) {
+				r = 0;
+				g = 0;
+				b = 0;
+				a = 255;
+			} else {
+        r = 0;
+				g = 0;
+				b = 0;
+				a = 0;
+			}
+
+      rgba_texture[rgba_index++] = r;
+      rgba_texture[rgba_index++] = g;
+      rgba_texture[rgba_index++] = b;
+      rgba_texture[rgba_index++] = a;
+    }
+  }
+
   GLuint id;
   glGenTextures(1, &id);
   glBindTexture(GL_TEXTURE_2D, id);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, ATLAS_WIDTH, ATLAS_HEIGHT, 0,
-    GL_ALPHA, GL_UNSIGNED_BYTE, atlas_texture);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ATLAS_WIDTH, ATLAS_HEIGHT, 0,
+    GL_RGBA, GL_UNSIGNED_BYTE, rgba_texture);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 }

@@ -80,6 +80,9 @@ static int prev_height = 0;
 
 bool gl3_bind_buf = true;
 
+
+#include <stdio.h>
+
 void gl3_init(void) {
   int gl_minor_version, gl_major_version;
 
@@ -142,25 +145,71 @@ void gl3_init(void) {
 
   glBindVertexArray(0);
 
+  GLubyte byte_texture[ATLAS_HEIGHT][ATLAS_WIDTH];
+
   GLubyte rgba_texture[ATLAS_WIDTH * ATLAS_HEIGHT * 4];
+
+
+	for(int i = 0; i < ATLAS_HEIGHT; i++) {
+    for(int j = 0; j < ATLAS_WIDTH; j++) {
+      byte_texture[i][j] = 0;
+    }
+  }
+
+  GLuint r, g, b, a;
+	int rgba_index = 0;
+
+	for(int i = 0; i < ATLAS_HEIGHT; i++) {
+    for(int j = 0; j < ATLAS_WIDTH; j++) {
+    
+      char current_char = atlas_texture[i][j];
+
+      if (current_char == '*') {
+        byte_texture[i][j] = 1;
+                   
+        for (int dy = -1; dy <= 1; dy++) {
+          for (int dx = -1; dx <= 1; dx++) {
+            if (dx == 0 && dy == 0) continue;
+
+            int ny = i + dy;
+            int nx = j + dx;
+
+            if (ny >= 0 && nx >= 0 && ny < ATLAS_HEIGHT && nx < ATLAS_WIDTH) {
+              if (byte_texture[ny][nx] == 0) {
+                byte_texture[ny][nx] = 2;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 
   for(int i = 0; i < ATLAS_HEIGHT; i++) {
     for(int j = 0; j < ATLAS_WIDTH; j++) {
-      if(atlas_texture[i][j]==' ') {
-        atlas_texture[i][j] = 0;
-      } else {
-        atlas_texture[i][j] = -1;
-      }
+      GLubyte atlas_cur = byte_texture[i][j];
 
-      int rgba_index = (i * ATLAS_WIDTH + j) * 4;
+			if (atlas_cur == 1) {
+				r = 255;
+				g = 255;
+				b = 255;
+				a = 255;
+			} else if (atlas_cur == 2) {
+				r = 0;
+				g = 0;
+				b = 0;
+				a = 255;
+			} else {
+        r = 0;
+				g = 0;
+				b = 0;
+				a = 0;
+			}
 
-      GLubyte atlas_cur = atlas_texture[i][j];
-
-      rgba_texture[rgba_index++] = atlas_cur;
-      rgba_texture[rgba_index++] = atlas_cur;
-      rgba_texture[rgba_index++] = atlas_cur;
-      rgba_texture[rgba_index++] = atlas_cur;
-      
+      rgba_texture[rgba_index++] = r;
+      rgba_texture[rgba_index++] = g;
+      rgba_texture[rgba_index++] = b;
+      rgba_texture[rgba_index++] = a;
     }
   }
 
