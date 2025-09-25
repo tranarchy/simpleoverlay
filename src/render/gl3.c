@@ -80,9 +80,6 @@ static int prev_height = 0;
 
 bool gl3_bind_buf = true;
 
-
-#include <stdio.h>
-
 void gl3_init(void) {
   int gl_minor_version, gl_major_version;
 
