@@ -1,13 +1,26 @@
 #include <dlfcn.h>
-
 #include <objc/runtime.h>
-#include <CoreFoundation/CoreFoundation.h>
 
 #include <glad.h>
 
 #define DYLD_INTERPOSE(_replacment,_replacee) \
 __attribute__((used)) static struct{ const void* replacment; const void* replacee; } _interpose_##_replacee \
 __attribute__ ((section ("__DATA,__interpose"))) = { (const void*)(unsigned long)&_replacment, (const void*)(unsigned long)&_replacee };
+
+typedef struct CGPoint {
+  double x;
+  double y;
+} CGPoint;
+
+typedef struct CGSize {
+  double width;
+  double height;
+} CGSize;
+
+typedef struct CGRect {
+  CGPoint origin;
+  CGSize size;
+} CGRect;
 
 void draw_overlay(const char *interface, unsigned int *viewport);
 
@@ -17,7 +30,7 @@ typedef void* (*PFNCGLGETPIXELFORMAT)(void *gl);
 typedef int (*PFNCGLCREATECONTEXT)(void *pixel_format, void *share_context, void **gl);
 typedef void *(*PFNCGLGETCURRENTCONTEXT)(void);
 typedef int (*PFNCGLSETCURRENTCONTEXT)(void *gl);
-typedef int (*PFNCGLGETSURFACEBOUNDS)(int cid, int wid, int sid, CGRect *bounds);
+typedef int (*PFNCGSGETSURFACEBOUNDS)(int cid, int wid, int sid, CGRect *bounds);
 
 static PFNCGLSETSURFACE CGLSetSurface_ptr = NULL;
 static PFNCGLGETSURFACE CGLGetSurface_ptr = NULL;
@@ -25,7 +38,7 @@ static PFNCGLGETPIXELFORMAT CGLGetPixelFormat_ptr = NULL;
 static PFNCGLCREATECONTEXT CGLCreateContext_ptr = NULL;
 static PFNCGLGETCURRENTCONTEXT CGLGetCurrentContext_ptr = NULL;
 static PFNCGLSETCURRENTCONTEXT CGLSetCurrentContext_ptr = NULL;
-static PFNCGLGETSURFACEBOUNDS CGLGetSurfaceBounds_ptr = NULL;
+static PFNCGSGETSURFACEBOUNDS CGSGetSurfaceBounds_ptr = NULL;
 
 static IMP flushBuffer_ptr;
 
@@ -77,7 +90,7 @@ static void flushBuffer(id self, SEL _cmd) {
       CGLSetCurrentContext_ptr = (PFNCGLSETCURRENTCONTEXT)get_libcgl_addr("CGLSetCurrentContext");
       CGLGetSurface_ptr = (PFNCGLGETSURFACE)get_libcgl_addr("CGLGetSurface");
       CGLSetSurface_ptr = (PFNCGLSETSURFACE)get_libcgl_addr("CGLSetSurface");
-      CGLGetSurfaceBounds_ptr = (PFNCGLGETSURFACEBOUNDS)get_libcgl_addr("CGSGetSurfaceBounds");
+      CGSGetSurfaceBounds_ptr = (PFNCGSGETSURFACEBOUNDS)get_libcgl_addr("CGSGetSurfaceBounds");
   }
 
   int viewport[4];
@@ -89,7 +102,7 @@ static void flushBuffer(id self, SEL _cmd) {
 
   prev_cgl_ctx = CGLGetCurrentContext_ptr();
   CGLGetSurface_ptr(prev_cgl_ctx, &cid, &wid, &sid);
-  CGLGetSurfaceBounds_ptr(cid, wid, sid, &bounds);
+  CGSGetSurfaceBounds_ptr(cid, wid, sid, &bounds);
 
   viewport[2] = (int)bounds.size.width;
   viewport[3] = (int)bounds.size.height;
