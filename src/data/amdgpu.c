@@ -64,6 +64,9 @@ void populate_amdgpu(s_overlay_info *overlay_info) {
         amdgpu_device_initialize_ptr = (PFNAMDGPUDEVICEINITIALIZE)dlsym(handle, "amdgpu_device_initialize");
         amdgpu_query_info_ptr = (PFNAMDGPUQUERYINFO)dlsym(handle, "amdgpu_query_info");
         amdgpu_query_sensor_info_ptr = (PFNAMDGPUQUERYSENSORINFO)dlsym(handle, "amdgpu_query_sensor_info");
+
+        if (!amdgpu_device_initialize_ptr || !amdgpu_query_info_ptr || !amdgpu_query_sensor_info_ptr)
+            return;
         
         fd = open("/dev/dri/renderD128", O_RDONLY);
         if (amdgpu_device_initialize_ptr(fd, &major_version, &minor_version, &device) < 0) {
